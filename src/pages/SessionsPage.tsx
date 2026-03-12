@@ -318,7 +318,7 @@ export default function SessionsPage() {
             return (
               <div
                 key={session.id}
-                className={`grid ${tableGridClass} gap-3 p-4 border-b last:border-b-0 text-sm bg-muted/30`}
+                className={`grid ${tableGridClass} items-center gap-2 p-4 border-b last:border-b-0 text-sm bg-muted/30`}
               >
                 <div className="min-w-0">
                   {canFullyEdit ? (
@@ -329,7 +329,7 @@ export default function SessionsPage() {
                           prev ? { ...prev, client_id: event.target.value } : prev,
                         )
                       }
-                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                      className="h-9 w-full rounded-md border bg-background px-3 py-2 text-sm"
                     >
                       {clients.map((client) => (
                         <option key={client.id} value={client.id}>
@@ -343,9 +343,9 @@ export default function SessionsPage() {
                     </span>
                   )}
                 </div>
-                <div className="min-w-0 space-y-2">
+                <div className="min-w-0">
                   {canFullyEdit ? (
-                    <>
+                    <div className="flex items-center gap-2">
                       <Input
                         type="date"
                         value={editForm.start_date}
@@ -354,7 +354,7 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_date: event.target.value } : prev,
                           )
                         }
-                        className="h-10 pr-9"
+                        className="h-9 min-w-0 flex-1 pr-9"
                       />
                       <Input
                         type="time"
@@ -364,9 +364,9 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_time: event.target.value } : prev,
                           )
                         }
-                        className="h-10 pr-9"
+                        className="h-9 w-[108px] flex-none pr-8"
                       />
-                    </>
+                    </div>
                   ) : (
                     <span className="block text-muted-foreground">
                       {new Date(session.start_time).toLocaleString()}
@@ -384,7 +384,7 @@ export default function SessionsPage() {
                           prev ? { ...prev, duration_minutes: event.target.value } : prev,
                         )
                       }
-                      className="h-10"
+                      className="h-9"
                     />
                   ) : (
                     <span className="block whitespace-nowrap text-muted-foreground">
@@ -402,7 +402,7 @@ export default function SessionsPage() {
                       onChange={(event) =>
                         setEditForm((prev) => (prev ? { ...prev, price: event.target.value } : prev))
                       }
-                      className="h-10"
+                      className="h-9"
                     />
                   ) : (
                     <span className="block whitespace-nowrap">{session.price} RUB</span>
@@ -416,7 +416,7 @@ export default function SessionsPage() {
                       setEditForm((prev) => (prev ? { ...prev, notes: event.target.value } : prev))
                     }
                     placeholder="Комментарий к сессии"
-                    className="h-10"
+                    className="h-9"
                   />
                 </div>
                 <div className="flex min-w-0 flex-col gap-2">
@@ -424,7 +424,7 @@ export default function SessionsPage() {
                     size="sm"
                     onClick={() => void saveInlineEdit(session)}
                     disabled={savingEdit}
-                    className="w-full"
+                    className="h-9 w-full"
                   >
                     <Save className="h-3.5 w-3.5 mr-1" />
                     Сохранить
@@ -434,7 +434,7 @@ export default function SessionsPage() {
                     size="sm"
                     onClick={cancelInlineEdit}
                     disabled={savingEdit}
-                    className="w-full"
+                    className="h-9 w-full"
                   >
                     <X className="h-3.5 w-3.5 mr-1" />
                     Отмена
