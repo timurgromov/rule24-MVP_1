@@ -58,7 +58,7 @@ function statusLabel(status: SessionStatus) {
 
 export default function SessionsPage() {
   const tableGridClass =
-    "md:[grid-template-columns:minmax(170px,1.15fr)_minmax(190px,1.2fr)_minmax(120px,0.8fr)_minmax(130px,0.85fr)_minmax(150px,0.9fr)_minmax(190px,1.1fr)_minmax(180px,1fr)]";
+    "md:grid-cols-[150px_210px_110px_120px_130px_minmax(150px,1fr)_140px]";
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -299,8 +299,7 @@ export default function SessionsPage() {
         </div>
       </form>
 
-      <div className="mt-6 rounded-xl border bg-card overflow-x-auto">
-        <div className="min-w-[1160px]">
+      <div className="mt-6 rounded-xl border bg-card overflow-hidden">
           <div className={`hidden md:grid ${tableGridClass} gap-3 p-4 border-b text-xs text-muted-foreground`}>
             <span>Клиент</span>
             <span>Начало</span>
@@ -318,7 +317,7 @@ export default function SessionsPage() {
             return (
               <div
                 key={session.id}
-                className={`grid ${tableGridClass} items-center gap-2 p-4 border-b last:border-b-0 text-sm bg-muted/30`}
+                className={`grid ${tableGridClass} items-center gap-3 p-4 border-b last:border-b-0 text-sm bg-muted/30`}
               >
                 <div className="min-w-0">
                   {canFullyEdit ? (
@@ -338,7 +337,7 @@ export default function SessionsPage() {
                       ))}
                     </select>
                   ) : (
-                    <span className="font-medium">
+                    <span className="block truncate font-medium">
                       {clientMap.get(session.client_id) ?? `#${session.client_id}`}
                     </span>
                   )}
@@ -364,11 +363,11 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_time: event.target.value } : prev,
                           )
                         }
-                        className="h-9 w-[108px] flex-none pr-8"
+                        className="h-9 w-[92px] flex-none pr-8"
                       />
                     </div>
                   ) : (
-                    <span className="block text-muted-foreground">
+                    <span className="block truncate text-muted-foreground">
                       {new Date(session.start_time).toLocaleString()}
                     </span>
                   )}
@@ -445,14 +444,14 @@ export default function SessionsPage() {
           }
 
           return (
-            <div key={session.id} className={`grid ${tableGridClass} gap-3 p-4 border-b last:border-b-0 text-sm`}>
-              <span className="block min-w-0 font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
-              <span className="block min-w-0 text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
+            <div key={session.id} className={`grid ${tableGridClass} items-center gap-3 p-4 border-b last:border-b-0 text-sm`}>
+              <span className="block min-w-0 truncate font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
+              <span className="block min-w-0 truncate text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
               <span className="block min-w-0 whitespace-nowrap text-muted-foreground">{session.duration_minutes} мин</span>
               <span className="block min-w-0 whitespace-nowrap">{session.price} RUB</span>
               <span className="block min-w-0 whitespace-nowrap">{statusLabel(session.status)}</span>
-              <span className="block min-w-0 text-muted-foreground">{session.notes ?? "-"}</span>
-              <div className="flex min-w-0 gap-2">
+              <span className="block min-w-0 truncate text-muted-foreground">{session.notes ?? "-"}</span>
+              <div className="flex min-w-0 items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => startInlineEdit(session)}>
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>
@@ -472,7 +471,6 @@ export default function SessionsPage() {
           {!loading && filteredSessions.length === 0 && (
             <p className="p-6 text-sm text-muted-foreground text-center">Сессии не найдены</p>
           )}
-        </div>
       </div>
 
       <div className="rounded-xl border bg-card overflow-hidden">
