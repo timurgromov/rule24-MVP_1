@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 SessionStatusValue = Literal["scheduled", "completed", "cancelled"]
+SessionOutcomeValue = Literal["completed", "late_cancellation", "no_show"]
 
 
 class SessionCreate(BaseModel):
@@ -45,6 +46,15 @@ class SessionOut(BaseModel):
         json_schema_extra={"example": "3000.00"},
     )
     status: SessionStatusValue
+    outcome_confirmed: bool = Field(
+        description="Therapist-confirmed real-world session outcome flag.",
+        json_schema_extra={"example": False},
+    )
+    outcome_type: SessionOutcomeValue | None = Field(
+        default=None,
+        description="Therapist-confirmed real-world outcome. Separate from payment state.",
+        json_schema_extra={"example": "completed"},
+    )
     notes: str | None
     created_at: datetime
     updated_at: datetime
@@ -60,4 +70,11 @@ class SessionCancelOut(BaseModel):
     charge_amount: Decimal | None = Field(
         description="Late cancellation charge amount. Equals full session price when applicable.",
         json_schema_extra={"example": "3000.00"},
+    )
+
+
+class SessionOutcomeConfirmIn(BaseModel):
+    outcome_type: SessionOutcomeValue = Field(
+        description="Therapist-confirmed real-world outcome for the session.",
+        json_schema_extra={"example": "late_cancellation"},
     )

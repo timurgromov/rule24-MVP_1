@@ -146,6 +146,8 @@ Fields:
 - duration_minutes
 - price
 - status
+- outcome_confirmed
+- outcome_type
 - notes
 - created_at
 - updated_at
@@ -158,6 +160,9 @@ Allowed statuses:
 Important:
 - sessions are cancelled, not physically deleted, in normal product flow
 - session history must be preserved for billing, cancellation logic, and disputes
+- `status` stores operational lifecycle of the calendar entry
+- `outcome_type` stores therapist-confirmed real-world outcome
+- session outcome and transaction result are different concepts and must remain separate
 
 ### CancellationRule
 Therapist cancellation policy.
@@ -237,6 +242,19 @@ Allowed statuses:
    - initiate charge through YooKassa
    - wait for webhook
    - mark transaction as paid or failed
+
+### Outcome Confirmation Flow
+1. A past session can require therapist confirmation of the real-world outcome.
+2. The therapist confirms one of:
+   - completed
+   - late_cancellation
+   - no_show
+3. Confirmation sets:
+   - `outcome_confirmed = true`
+   - `outcome_type = chosen outcome`
+4. Confirming outcome does not silently modify transactions.
+5. Session outcome answers what happened in reality.
+6. Transaction status answers what happened with money.
 
 Idempotency requirements:
 - cancel endpoint is idempotent-safe: repeated cancellation returns conflict and does not run business logic twice

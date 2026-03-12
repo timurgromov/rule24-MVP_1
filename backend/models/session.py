@@ -17,6 +17,12 @@ class SessionStatus(str, enum.Enum):
     cancelled = "cancelled"
 
 
+class SessionOutcomeType(str, enum.Enum):
+    completed = "completed"
+    late_cancellation = "late_cancellation"
+    no_show = "no_show"
+
+
 class Session(TimestampMixin, Base):
     __tablename__ = "sessions"
 
@@ -28,6 +34,11 @@ class Session(TimestampMixin, Base):
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     status: Mapped[SessionStatus] = mapped_column(
         Enum(SessionStatus, name="session_status"), default=SessionStatus.scheduled
+    )
+    outcome_confirmed: Mapped[bool] = mapped_column(default=False, nullable=False)
+    outcome_type: Mapped[SessionOutcomeType | None] = mapped_column(
+        Enum(SessionOutcomeType, name="session_outcome_type"),
+        nullable=True,
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 

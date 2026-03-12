@@ -8,9 +8,15 @@ from api.deps import get_current_user
 from db.session import get_db
 from models.client import Client
 from models.session import Session as AppointmentSession
-from models.session import SessionStatus
+from models.session import SessionOutcomeType, SessionStatus
 from models.user import User
-from schemas.session import SessionCancelOut, SessionCreate, SessionOut, SessionUpdate
+from schemas.session import (
+    SessionCancelOut,
+    SessionCreate,
+    SessionOutcomeConfirmIn,
+    SessionOut,
+    SessionUpdate,
+)
 from services.cancellation_rule_service import get_or_create_cancellation_rule
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -51,6 +57,10 @@ def _hours_before_start(start_time: datetime) -> float:
     return (value - now).total_seconds() / 3600
 
 
+def _is_session_in_past(start_time: datetime) -> bool:
+    return _hours_before_start(start_time) < 0
+
+
 @router.post("", response_model=SessionOut, status_code=status.HTTP_201_CREATED)
 def create_session(
     payload: SessionCreate,
@@ -84,6 +94,24 @@ def list_sessions(
         select(AppointmentSession)
         .where(AppointmentSession.user_id == current_user.id)
         .order_by(AppointmentSession.start_time.desc())
+    ).all()
+    return [SessionOut.model_validate(item) for item in sessions]
+
+
+@router.get("/requires-attention", response_model=list[SessionOut])
+def list_sessions_requires_attention(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[SessionOut]:
+    now = datetime.now(timezone.utc)
+    sessions = db.scalars(
+        select(AppointmentSession)
+        .where(
+            AppointmentSession.user_id == current_user.id,
+            AppointmentSession.start_time < now,
+            AppointmentSession.outcome_confirmed.is_(False),
+        )
+        .order_by(AppointmentSession.start_time.asc())
     ).all()
     return [SessionOut.model_validate(item) for item in sessions]
 
@@ -135,6 +163,35 @@ def update_session(
     for field, value in update_data.items():
         setattr(current_session, field, value)
 
+    db.commit()
+    db.refresh(current_session)
+    return SessionOut.model_validate(current_session)
+
+
+@router.post("/{session_id}/confirm-outcome", response_model=SessionOut)
+def confirm_session_outcome(
+    session_id: int,
+    payload: SessionOutcomeConfirmIn,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> SessionOut:
+    current_session = _get_owned_session_or_404(db, current_user.id, session_id)
+
+    if not _is_session_in_past(current_session.start_time):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Session outcome can only be confirmed after session start time",
+        )
+
+    if current_session.outcome_confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Session outcome already confirmed",
+        )
+
+    # Outcome confirmation reflects what happened in reality; money state stays in transactions.
+    current_session.outcome_confirmed = True
+    current_session.outcome_type = SessionOutcomeType(payload.outcome_type)
     db.commit()
     db.refresh(current_session)
     return SessionOut.model_validate(current_session)

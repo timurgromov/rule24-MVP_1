@@ -63,6 +63,9 @@
 - [x] Create API to cancel session
 - [x] Add session status logic
 - [x] Add cancellation time comparison logic
+- [x] Add therapist-confirmed outcome fields for past sessions
+- [x] Add confirm-outcome endpoint
+- [x] Add requires-attention endpoint for unresolved past sessions
 
 Session model rules:
 - use start_time as datetime
@@ -74,6 +77,8 @@ Session model rules:
 - cancel endpoint must be idempotent-safe (`Session already cancelled` on repeat)
 - ensure session belongs to authenticated user
 - ensure client belongs to same authenticated user
+- keep session lifecycle status separate from therapist-confirmed real-world outcome
+- outcome confirmation must not silently change payment or transaction state
 
 ---
 
@@ -110,6 +115,8 @@ Phase 8 architecture requirements:
 - [x] Connect settings page to backend
 - [x] Connect client payment page to backend
 - [x] Connect transactions to UI
+- [x] Add authenticated attention banner for unresolved past sessions
+- [x] Add therapist outcome confirmation actions on Sessions page
 
 ---
 
@@ -175,6 +182,8 @@ Phase 8 architecture requirements:
 - получение данных из API
 - отображение ошибок
 - авторизация пользователя
+- баннер attention для прошедших сессий без подтвержденного итога
+- подтверждение исхода сессии без поломки create/edit/cancel flow
 
 ### Phase 10 — Проверка подписок
 - создание подписки

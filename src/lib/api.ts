@@ -44,6 +44,7 @@ export type ClientDto = {
 };
 
 export type SessionStatus = "scheduled" | "completed" | "cancelled";
+export type SessionOutcomeType = "completed" | "late_cancellation" | "no_show";
 
 export type SessionDto = {
   id: number;
@@ -53,6 +54,8 @@ export type SessionDto = {
   duration_minutes: number;
   price: string;
   status: SessionStatus;
+  outcome_confirmed: boolean;
+  outcome_type: SessionOutcomeType | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -212,6 +215,12 @@ export const api = {
     },
   ) => request<SessionDto>(`/sessions/${sessionId}`, { method: "PUT", body: payload }),
   getSession: (sessionId: number) => request<SessionDto>(`/sessions/${sessionId}`),
+  listSessionsRequiresAttention: () => request<SessionDto[]>("/sessions/requires-attention"),
+  confirmSessionOutcome: (sessionId: number, payload: { outcome_type: SessionOutcomeType }) =>
+    request<SessionDto>(`/sessions/${sessionId}/confirm-outcome`, {
+      method: "POST",
+      body: payload,
+    }),
   cancelSession: (sessionId: number) =>
     request<SessionCancelResponse>(`/sessions/${sessionId}/cancel`, { method: "POST" }),
 
