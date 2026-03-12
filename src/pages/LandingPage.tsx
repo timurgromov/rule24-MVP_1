@@ -33,8 +33,8 @@ export default function LandingPage() {
             Получить ранний доступ
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="lg" onClick={() => navigate('/login')}>
-            Войти в приложение
+          <Button variant="outline" size="lg" onClick={() => navigate('/demo')}>
+            Посмотреть демо
           </Button>
         </div>
       </section>
@@ -64,7 +64,7 @@ export default function LandingPage() {
           <div className="rounded-xl border bg-card p-6 space-y-2 text-center">
             <p className="text-sm font-medium text-muted-foreground">Ранний доступ</p>
             <p className="text-3xl font-bold text-foreground">Бесплатно</p>
-            <p className="text-sm text-muted-foreground">3 месяца</p>
+            <p className="text-sm text-muted-foreground">1 месяц</p>
           </div>
           <div className="rounded-xl border bg-card p-6 space-y-2 text-center">
             <p className="text-sm font-medium text-muted-foreground">После запуска</p>

@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { fakeSessions } from "@/lib/data";
 import { TrendingDown, UserX, AlertCircle, CheckCircle2, CreditCard, ArrowRight, Copy, ExternalLink, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { getAccessToken, isSubscriptionCardAttached } from "@/lib/auth";
+import { api, AuthUser } from "@/lib/api";
 
 export default function DashboardPage() {
+  const isDemoMode = !getAccessToken();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const totalPaid = fakeSessions.filter(s => s.isPaid).reduce((a, s) => a + s.price, 0);
   const totalLost = fakeSessions.filter(s => ['NO_SHOW', 'CANCELLED_LATE'].includes(s.status)).reduce((a, s) => a + s.price, 0);
   const lateCancellations = fakeSessions.filter(s => s.status === 'CANCELLED_LATE').length;
@@ -18,6 +22,17 @@ export default function DashboardPage() {
 
   const [kassaConnected] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const hasSubscriptionCard = isSubscriptionCardAttached();
+
+  useEffect(() => {
+    if (isDemoMode) return;
+    api.me().then(setCurrentUser).catch(() => setCurrentUser(null));
+  }, [isDemoMode]);
+
+  const trialUntilText = useMemo(() => {
+    if (!currentUser?.subscription_until) return "—";
+    return new Date(currentUser.subscription_until).toLocaleDateString("ru-RU");
+  }, [currentUser?.subscription_until]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/pay/demo`);
@@ -40,13 +55,34 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Текущий тариф: Ранний доступ</p>
-            <p className="text-xs text-muted-foreground">3 месяца бесплатно · после — 1 490 ₽/мес</p>
+            <p className="text-xs text-muted-foreground">1 месяц бесплатно · после — 1 490 ₽/мес</p>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
-          <div>Бесплатно до: <span className="font-medium text-foreground">09.06.2026</span></div>
-          <div>Списание: <span className="font-medium text-foreground">10.06.2026</span></div>
-          <div>Автопродление: <span className="font-medium text-foreground">включено</span></div>
+          {!hasSubscriptionCard ? (
+            <>
+              <div>
+                Пробный доступ до:{" "}
+                <span className="font-medium text-foreground">{trialUntilText}</span>
+              </div>
+              <div className="sm:col-span-2">
+                Чтобы продолжить работу, подключите карту
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                Следующее списание:{" "}
+                <span className="font-medium text-foreground">{trialUntilText}</span>
+              </div>
+              <div>
+                Автопродление: <span className="font-medium text-foreground">включено</span>
+              </div>
+              <div>
+                Тариф: <span className="font-medium text-foreground">активен</span>
+              </div>
+            </>
+          )}
         </div>
         <Link to="/app/settings" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors">
           Управлять тарифом
@@ -72,48 +108,49 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Demo session example */}
-      <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Пример сессии</h3>
-          <span className="text-xs text-muted-foreground ml-auto">Демо</span>
+      {isDemoMode && (
+        <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">Пример сессии</h3>
+            <span className="text-xs text-muted-foreground ml-auto">Демо</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-muted-foreground">Клиент</p>
+              <p className="font-medium text-foreground">Анна К.</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Дата</p>
+              <p className="font-medium text-foreground">Завтра</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Время</p>
+              <p className="font-medium text-foreground">14:00</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Стоимость</p>
+              <p className="font-medium text-foreground">4 000 ₽</p>
+            </div>
+          </div>
+          <div className="rounded-lg bg-background/60 p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">Ссылка для клиента:</p>
+            <p className="text-sm font-mono text-foreground">rule24.app/pay/demo</p>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" size="sm" onClick={handleCopyLink}>
+                <Copy className="h-3.5 w-3.5 mr-1.5" />
+                {linkCopied ? "Скопировано" : "Скопировать ссылку"}
+              </Button>
+              <Button size="sm" asChild>
+                <a href="/pay/demo" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                  Открыть как клиент
+                </a>
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-          <div>
-            <p className="text-xs text-muted-foreground">Клиент</p>
-            <p className="font-medium text-foreground">Анна К.</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Дата</p>
-            <p className="font-medium text-foreground">Завтра</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Время</p>
-            <p className="font-medium text-foreground">14:00</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Стоимость</p>
-            <p className="font-medium text-foreground">4 000 ₽</p>
-          </div>
-        </div>
-        <div className="rounded-lg bg-background/60 p-3 space-y-2">
-          <p className="text-xs text-muted-foreground">Ссылка для клиента:</p>
-          <p className="text-sm font-mono text-foreground">rule24.app/pay/demo</p>
-          <div className="flex gap-2 pt-1">
-            <Button variant="outline" size="sm" onClick={handleCopyLink}>
-              <Copy className="h-3.5 w-3.5 mr-1.5" />
-              {linkCopied ? "Скопировано" : "Скопировать ссылку"}
-            </Button>
-            <Button size="sm" asChild>
-              <a href="/pay/demo" target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                Открыть как клиент
-              </a>
-            </Button>
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Доход за месяц" value={`${totalPaid.toLocaleString('ru-RU')} ₽`} subtitle="Оплаченные сессии" icon={CheckCircle2} variant="success" />

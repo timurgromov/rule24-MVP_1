@@ -4,7 +4,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CreateSessionButton } from "@/components/CreateSessionButton";
 import { api, ApiError, AuthUser } from "@/lib/api";
-import { clearAccessToken } from "@/lib/auth";
 
 export default function AppLayout() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -14,10 +13,7 @@ export default function AppLayout() {
       .me()
       .then(setCurrentUser)
       .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) {
-          clearAccessToken();
-          window.location.href = "/login";
-        }
+        if (err instanceof ApiError && err.status === 401) return;
       });
   }, []);
 

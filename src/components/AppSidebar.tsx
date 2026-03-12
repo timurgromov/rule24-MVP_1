@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
@@ -8,16 +8,17 @@ import { LayoutDashboard, CalendarDays, Users, Settings, MessageCircle, LogOut }
 import { Button } from "@/components/ui/button";
 import { clearAccessToken } from "@/lib/auth";
 
-const items = [
-  { title: "Дашборд", url: "/app", icon: LayoutDashboard },
-  { title: "Сессии", url: "/app/sessions", icon: CalendarDays },
-  { title: "Клиенты", url: "/app/clients", icon: Users },
-  { title: "Настройки", url: "/app/settings", icon: Settings },
-];
-
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { pathname } = useLocation();
+  const basePath = pathname.startsWith("/demo") ? "/demo" : "/app";
+  const items = [
+    { title: "Дашборд", url: basePath, icon: LayoutDashboard },
+    { title: "Сессии", url: `${basePath}/sessions`, icon: CalendarDays },
+    { title: "Клиенты", url: `${basePath}/clients`, icon: Users },
+    { title: "Настройки", url: `${basePath}/settings`, icon: Settings },
+  ];
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -36,7 +37,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === '/app'}
+                      end={item.url === basePath}
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                     >
@@ -68,7 +69,7 @@ export function AppSidebar() {
           className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
           onClick={() => {
             clearAccessToken();
-            window.location.href = "/login";
+            window.location.href = "/";
           }}
         >
           <LogOut className="h-4 w-4 shrink-0" />

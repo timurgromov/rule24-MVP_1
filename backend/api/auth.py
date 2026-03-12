@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -27,6 +29,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> TokenRe
         password_hash=hash_password(payload.password),
         name=payload.name,
         subscription_status="trial",
+        subscription_until=datetime.now(timezone.utc) + timedelta(days=30),
     )
     db.add(user)
     db.commit()
