@@ -297,7 +297,7 @@ export default function SessionsPage() {
         </div>
       </form>
 
-      <div className="mt-6 rounded-xl border bg-card overflow-hidden">
+      <div className="mt-6 rounded-xl border bg-card overflow-x-auto">
         <div className="hidden md:grid grid-cols-7 gap-3 p-4 border-b text-xs text-muted-foreground">
           <span>Клиент</span>
           <span>Начало</span>
@@ -340,7 +340,7 @@ export default function SessionsPage() {
                     </span>
                   )}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                   {canFullyEdit ? (
                     <>
                       <Input
@@ -351,7 +351,7 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_date: event.target.value } : prev,
                           )
                         }
-                        className="h-8"
+                        className="h-8 pr-9"
                       />
                       <Input
                         type="time"
@@ -361,7 +361,7 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_time: event.target.value } : prev,
                           )
                         }
-                        className="h-8"
+                        className="h-8 pr-9"
                       />
                     </>
                   ) : (
