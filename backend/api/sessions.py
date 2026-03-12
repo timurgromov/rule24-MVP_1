@@ -65,7 +65,8 @@ def create_session(
         start_time=payload.start_time,
         duration_minutes=payload.duration_minutes,
         price=payload.price,
-        status=SessionStatus(payload.status),
+        # New sessions are always created as planned/scheduled.
+        status=SessionStatus.scheduled,
         notes=payload.notes,
     )
     db.add(new_session)
@@ -107,11 +108,22 @@ def update_session(
     current_session = _get_owned_session_or_404(db, current_user.id, session_id)
 
     update_data = payload.model_dump(exclude_unset=True)
+    locked_statuses = {SessionStatus.completed, SessionStatus.cancelled}
+
+    # Completed/cancelled sessions are immutable except notes to preserve audit/billing history.
+    if current_session.status in locked_statuses:
+        blocked_fields = [field for field in update_data.keys() if field != "notes"]
+        if blocked_fields:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Only notes can be updated for completed or cancelled session",
+            )
+
     if "client_id" in update_data:
         _get_owned_client_or_404(db, current_user.id, update_data["client_id"])
 
     if "price" in update_data and update_data["price"] is not None:
-        if current_session.status in {SessionStatus.completed, SessionStatus.cancelled}:
+        if current_session.status in locked_statuses:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Cannot change price for completed or cancelled session",

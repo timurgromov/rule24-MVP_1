@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CalendarClock, CircleDollarSign, Edit2, Search, XCircle } from "lucide-react";
+import { CalendarClock, Edit2, Save, Search, X, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,6 @@ import {
   api,
   ApiError,
   ClientDto,
-  SessionCancelResponse,
   SessionDto,
   SessionStatus,
   TransactionDto,
@@ -21,7 +20,6 @@ type SessionForm = {
   duration_minutes: string;
   price: string;
   notes: string;
-  status: SessionStatus;
 };
 
 const emptySessionForm: SessionForm = {
@@ -31,11 +29,25 @@ const emptySessionForm: SessionForm = {
   duration_minutes: "60",
   price: "3000.00",
   notes: "",
-  status: "scheduled",
 };
 
 function toDatetimeIso(date: string, time: string): string {
   return new Date(`${date}T${time}`).toISOString();
+}
+
+function toLocalDateInput(value: string): string {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toLocalTimeInput(value: string): string {
+  const date = new Date(value);
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 }
 
 function statusLabel(status: SessionStatus) {
@@ -48,11 +60,12 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [clients, setClients] = useState<ClientDto[]>([]);
-  const [form, setForm] = useState<SessionForm>(emptySessionForm);
+  const [createForm, setCreateForm] = useState<SessionForm>(emptySessionForm);
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [cancelResult, setCancelResult] = useState<SessionCancelResponse | null>(null);
+  const [editForm, setEditForm] = useState<SessionForm | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadAll = async () => {
@@ -92,32 +105,24 @@ export default function SessionsPage() {
     });
   }, [search, sessions, clientMap]);
 
-  const resetForm = () => {
-    setEditingId(null);
-    setForm(emptySessionForm);
+  const resetCreateForm = () => {
+    setCreateForm(emptySessionForm);
   };
 
   const submitSession = async (event: FormEvent) => {
     event.preventDefault();
-    if (!form.client_id || !form.start_date || !form.start_time) return;
+    if (!createForm.client_id || !createForm.start_date || !createForm.start_time) return;
     setSubmitting(true);
     try {
-      const payload = {
-        client_id: Number(form.client_id),
-        start_time: toDatetimeIso(form.start_date, form.start_time),
-        duration_minutes: Number(form.duration_minutes),
-        price: Number(form.price).toFixed(2),
-        status: form.status,
-        notes: form.notes || null,
-      };
-      if (editingId) {
-        await api.updateSession(editingId, payload);
-        toast({ title: "Сессия обновлена" });
-      } else {
-        await api.createSession(payload);
-        toast({ title: "Сессия создана" });
-      }
-      resetForm();
+      await api.createSession({
+        client_id: Number(createForm.client_id),
+        start_time: toDatetimeIso(createForm.start_date, createForm.start_time),
+        duration_minutes: Number(createForm.duration_minutes),
+        price: Number(createForm.price).toFixed(2),
+        notes: createForm.notes || null,
+      });
+      toast({ title: "Сессия создана" });
+      resetCreateForm();
       await loadAll();
     } catch (err) {
       const message = err instanceof ApiError ? err.detail : "Failed to save session";
@@ -127,47 +132,63 @@ export default function SessionsPage() {
     }
   };
 
-  const editSession = (session: SessionDto) => {
-    const dateObj = new Date(session.start_time);
+  const startInlineEdit = (session: SessionDto) => {
     setEditingId(session.id);
-    setForm({
+    setEditForm({
       client_id: String(session.client_id),
-      start_date: dateObj.toISOString().slice(0, 10),
-      start_time: dateObj.toISOString().slice(11, 16),
+      start_date: toLocalDateInput(session.start_time),
+      start_time: toLocalTimeInput(session.start_time),
       duration_minutes: String(session.duration_minutes),
       price: session.price,
       notes: session.notes ?? "",
-      status: session.status,
     });
+  };
+
+  const cancelInlineEdit = () => {
+    setEditingId(null);
+    setEditForm(null);
+  };
+
+  const saveInlineEdit = async (session: SessionDto) => {
+    if (!editForm) return;
+    setSavingEdit(true);
+    try {
+      if (session.status === "scheduled") {
+        await api.updateSession(session.id, {
+          client_id: Number(editForm.client_id),
+          start_time: toDatetimeIso(editForm.start_date, editForm.start_time),
+          duration_minutes: Number(editForm.duration_minutes),
+          price: Number(editForm.price).toFixed(2),
+          notes: editForm.notes || null,
+        });
+      } else {
+        await api.updateSession(session.id, {
+          notes: editForm.notes || null,
+        });
+      }
+      toast({ title: "Сессия обновлена" });
+      cancelInlineEdit();
+      await loadAll();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.detail : "Failed to update session";
+      toast({ title: "Ошибка", description: message, variant: "destructive" });
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   const cancelSession = async (sessionId: number) => {
     try {
       const result = await api.cancelSession(sessionId);
-      setCancelResult(result);
       toast({
-        title: result.is_late_cancellation ? "Поздняя отмена" : "Сессия отменена",
+        title: "Сессия отменена",
         description: result.is_late_cancellation
-          ? `Штраф: ${result.charge_amount ?? "0.00"} RUB`
-          : "Штраф не применяется",
+          ? `Штраф будет применён: ${result.charge_amount ?? "0.00"} RUB`
+          : "Штраф не применён.",
       });
       await loadAll();
     } catch (err) {
       const message = err instanceof ApiError ? err.detail : "Failed to cancel session";
-      toast({ title: "Ошибка", description: message, variant: "destructive" });
-    }
-  };
-
-  const requestPenalty = async (sessionId: number) => {
-    try {
-      const result = await api.requestPenaltyCharge(sessionId);
-      toast({
-        title: "Штраф инициирован",
-        description: `Транзакция #${result.transaction_id}, сумма ${result.amount} RUB`,
-      });
-      await loadAll();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.detail : "Penalty charge failed";
       toast({ title: "Ошибка", description: message, variant: "destructive" });
     }
   };
@@ -193,88 +214,90 @@ export default function SessionsPage() {
       </div>
 
       <form onSubmit={submitSession} className="rounded-xl border bg-card p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <select
-          value={form.client_id}
-          onChange={(event) => setForm((prev) => ({ ...prev, client_id: event.target.value }))}
-          className="rounded-md border bg-background px-3 py-2 text-sm"
-          required
-        >
-          <option value="">Клиент</option>
-          {clients.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.name}
-            </option>
-          ))}
-        </select>
-        <Input
-          type="date"
-          value={form.start_date}
-          onChange={(event) => setForm((prev) => ({ ...prev, start_date: event.target.value }))}
-          required
-        />
-        <Input
-          type="time"
-          value={form.start_time}
-          onChange={(event) => setForm((prev) => ({ ...prev, start_time: event.target.value }))}
-          required
-        />
-        <Input
-          type="number"
-          min={1}
-          value={form.duration_minutes}
-          onChange={(event) =>
-            setForm((prev) => ({ ...prev, duration_minutes: event.target.value }))
-          }
-          placeholder="Длительность (мин)"
-        />
-        <Input
-          type="number"
-          min={0.01}
-          step={0.01}
-          value={form.price}
-          onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
-          placeholder="Цена"
-          required
-        />
-        <select
-          value={form.status}
-          onChange={(event) =>
-            setForm((prev) => ({ ...prev, status: event.target.value as SessionStatus }))
-          }
-          className="rounded-md border bg-background px-3 py-2 text-sm"
-        >
-          <option value="scheduled">Запланирована</option>
-          <option value="completed">Завершена</option>
-          <option value="cancelled">Отменена</option>
-        </select>
-        <Input
-          className="lg:col-span-2"
-          value={form.notes}
-          onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-          placeholder="Заметки"
-        />
-        <div className="flex gap-2">
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground">Клиент</label>
+          <select
+            value={createForm.client_id}
+            onChange={(event) =>
+              setCreateForm((prev) => ({ ...prev, client_id: event.target.value }))
+            }
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            required
+          >
+            <option value="">Клиент</option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground">Дата сессии</label>
+          <Input
+            type="date"
+            value={createForm.start_date}
+            onChange={(event) =>
+              setCreateForm((prev) => ({ ...prev, start_date: event.target.value }))
+            }
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground">Время начала</label>
+          <Input
+            type="time"
+            value={createForm.start_time}
+            onChange={(event) =>
+              setCreateForm((prev) => ({ ...prev, start_time: event.target.value }))
+            }
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground">Длительность (минуты)</label>
+          <Input
+            type="number"
+            min={1}
+            value={createForm.duration_minutes}
+            onChange={(event) =>
+              setCreateForm((prev) => ({ ...prev, duration_minutes: event.target.value }))
+            }
+            placeholder="60"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground">Стоимость (₽)</label>
+          <Input
+            type="number"
+            min={0.01}
+            step={0.01}
+            value={createForm.price}
+            onChange={(event) => setCreateForm((prev) => ({ ...prev, price: event.target.value }))}
+            placeholder="3000"
+            required
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-sm text-muted-foreground">Комментарий</label>
+          <Input
+            value={createForm.notes}
+            onChange={(event) => setCreateForm((prev) => ({ ...prev, notes: event.target.value }))}
+            placeholder="Комментарий к сессии"
+          />
+        </div>
+        <div className="mt-4 flex gap-2 lg:col-start-3 lg:justify-end">
           <Button type="submit" disabled={submitting}>
             <CalendarClock className="h-4 w-4 mr-1" />
-            {editingId ? "Сохранить" : "Создать"}
+            Создать
           </Button>
-          <Button type="button" variant="outline" onClick={resetForm}>
+          <Button type="button" variant="outline" onClick={resetCreateForm}>
             Сброс
           </Button>
         </div>
       </form>
 
-      {cancelResult && (
-        <div className="rounded-xl border bg-card p-4 text-sm space-y-1">
-          <p className="font-medium">Результат отмены сессии #{cancelResult.session.id}</p>
-          <p>Окно отмены: {cancelResult.cancellation_window_hours}ч</p>
-          <p>До начала: {cancelResult.hours_before_start}ч</p>
-          <p>Поздняя отмена: {cancelResult.is_late_cancellation ? "да" : "нет"}</p>
-          <p>Сумма штрафа: {cancelResult.charge_amount ?? "0.00"} RUB</p>
-        </div>
-      )}
-
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="mt-6 rounded-xl border bg-card overflow-hidden">
         <div className="hidden md:grid grid-cols-7 gap-3 p-4 border-b text-xs text-muted-foreground">
           <span>Клиент</span>
           <span>Начало</span>
@@ -284,37 +307,154 @@ export default function SessionsPage() {
           <span>Заметки</span>
           <span>Действия</span>
         </div>
-        {filteredSessions.map((session) => (
-          <div key={session.id} className="grid md:grid-cols-7 gap-2 p-4 border-b last:border-b-0 text-sm">
-            <span className="font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
-            <span className="text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
-            <span className="text-muted-foreground">{session.duration_minutes} мин</span>
-            <span>{session.price} RUB</span>
-            <span>{statusLabel(session.status)}</span>
-            <span className="text-muted-foreground">{session.notes ?? "-"}</span>
-            <div className="flex flex-wrap gap-1">
-              <Button variant="outline" size="sm" onClick={() => editSession(session)}>
-                <Edit2 className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void cancelSession(session.id)}
-                className="text-destructive"
+        {filteredSessions.map((session) => {
+          const isEditing = editingId === session.id && editForm !== null;
+          const canFullyEdit = session.status === "scheduled";
+
+          if (isEditing && editForm) {
+            return (
+              <div
+                key={session.id}
+                className="grid md:grid-cols-7 gap-2 p-4 border-b last:border-b-0 text-sm bg-muted/30"
               >
-                <XCircle className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void requestPenalty(session.id)}
-                disabled={session.status !== "cancelled"}
-              >
-                <CircleDollarSign className="h-3.5 w-3.5" />
-              </Button>
+                <div>
+                  {canFullyEdit ? (
+                    <select
+                      value={editForm.client_id}
+                      onChange={(event) =>
+                        setEditForm((prev) =>
+                          prev ? { ...prev, client_id: event.target.value } : prev,
+                        )
+                      }
+                      className="w-full rounded-md border bg-background px-2 py-1 text-sm"
+                    >
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="font-medium">
+                      {clientMap.get(session.client_id) ?? `#${session.client_id}`}
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  {canFullyEdit ? (
+                    <>
+                      <Input
+                        type="date"
+                        value={editForm.start_date}
+                        onChange={(event) =>
+                          setEditForm((prev) =>
+                            prev ? { ...prev, start_date: event.target.value } : prev,
+                          )
+                        }
+                        className="h-8"
+                      />
+                      <Input
+                        type="time"
+                        value={editForm.start_time}
+                        onChange={(event) =>
+                          setEditForm((prev) =>
+                            prev ? { ...prev, start_time: event.target.value } : prev,
+                          )
+                        }
+                        className="h-8"
+                      />
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {new Date(session.start_time).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  {canFullyEdit ? (
+                    <Input
+                      type="number"
+                      min={1}
+                      value={editForm.duration_minutes}
+                      onChange={(event) =>
+                        setEditForm((prev) =>
+                          prev ? { ...prev, duration_minutes: event.target.value } : prev,
+                        )
+                      }
+                      className="h-8"
+                    />
+                  ) : (
+                    <span className="text-muted-foreground">{session.duration_minutes} мин</span>
+                  )}
+                </div>
+                <div>
+                  {canFullyEdit ? (
+                    <Input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      value={editForm.price}
+                      onChange={(event) =>
+                        setEditForm((prev) => (prev ? { ...prev, price: event.target.value } : prev))
+                      }
+                      className="h-8"
+                    />
+                  ) : (
+                    <span>{session.price} RUB</span>
+                  )}
+                </div>
+                <span>{statusLabel(session.status)}</span>
+                <Input
+                  value={editForm.notes}
+                  onChange={(event) =>
+                    setEditForm((prev) => (prev ? { ...prev, notes: event.target.value } : prev))
+                  }
+                  placeholder="Комментарий к сессии"
+                  className="h-8"
+                />
+                <div className="flex flex-wrap gap-1">
+                  <Button
+                    size="sm"
+                    onClick={() => void saveInlineEdit(session)}
+                    disabled={savingEdit}
+                  >
+                    <Save className="h-3.5 w-3.5 mr-1" />
+                    Сохранить
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={cancelInlineEdit} disabled={savingEdit}>
+                    <X className="h-3.5 w-3.5 mr-1" />
+                    Отмена
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={session.id} className="grid md:grid-cols-7 gap-2 p-4 border-b last:border-b-0 text-sm">
+              <span className="font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
+              <span className="text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
+              <span className="text-muted-foreground">{session.duration_minutes} мин</span>
+              <span>{session.price} RUB</span>
+              <span>{statusLabel(session.status)}</span>
+              <span className="text-muted-foreground">{session.notes ?? "-"}</span>
+              <div className="flex flex-wrap gap-1">
+                <Button variant="outline" size="sm" onClick={() => startInlineEdit(session)}>
+                  <Edit2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void cancelSession(session.id)}
+                  className="text-destructive"
+                  disabled={session.status !== "scheduled"}
+                >
+                  <XCircle className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {!loading && filteredSessions.length === 0 && (
           <p className="p-6 text-sm text-muted-foreground text-center">Сессии не найдены</p>
         )}
