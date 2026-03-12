@@ -1,0 +1,63 @@
+from datetime import datetime
+from decimal import Decimal
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+SessionStatusValue = Literal["scheduled", "completed", "cancelled"]
+
+
+class SessionCreate(BaseModel):
+    client_id: int = Field(example=1)
+    start_time: datetime = Field(example="2026-03-20T10:00:00Z")
+    duration_minutes: int = Field(gt=0, le=720, example=60)
+    price: Decimal = Field(
+        gt=0,
+        description="Full session price in RUB. Used as late-cancellation charge source.",
+        json_schema_extra={"example": "3000.00"},
+    )
+    status: SessionStatusValue = "scheduled"
+    notes: str | None = None
+
+
+class SessionUpdate(BaseModel):
+    client_id: int | None = None
+    start_time: datetime | None = None
+    duration_minutes: int | None = Field(default=None, gt=0, le=720)
+    price: Decimal | None = Field(
+        default=None,
+        gt=0,
+        description="Session price in RUB.",
+        json_schema_extra={"example": "3500.00"},
+    )
+    status: SessionStatusValue | None = None
+    notes: str | None = None
+
+
+class SessionOut(BaseModel):
+    id: int
+    user_id: int
+    client_id: int
+    start_time: datetime
+    duration_minutes: int
+    price: Decimal = Field(
+        description="Session price in RUB.",
+        json_schema_extra={"example": "3000.00"},
+    )
+    status: SessionStatusValue
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SessionCancelOut(BaseModel):
+    session: SessionOut
+    cancellation_window_hours: int
+    hours_before_start: float
+    is_late_cancellation: bool
+    charge_amount: Decimal | None = Field(
+        description="Late cancellation charge amount. Equals full session price when applicable.",
+        json_schema_extra={"example": "3000.00"},
+    )
