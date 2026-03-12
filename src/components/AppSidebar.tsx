@@ -4,12 +4,21 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, SidebarRail, useSidebar,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, CalendarDays, Users, Settings, MessageCircle, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Users,
+  Settings,
+  MessageCircle,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearAccessToken } from "@/lib/auth";
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const basePath = pathname.startsWith("/demo") ? "/demo" : "/app";
@@ -22,12 +31,22 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <Link to="/" className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4 hover:bg-sidebar-accent/50 transition-colors">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
-          R
-        </div>
-        {!collapsed && <span className="text-base font-semibold text-foreground">Rule24</span>}
-      </Link>
+      <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-3">
+        <Link to="/" className="flex min-w-0 items-center gap-2 hover:opacity-90 transition-opacity">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
+            R
+          </div>
+          {!collapsed && <span className="text-base font-semibold text-foreground">Rule24</span>}
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto h-7 w-7 text-muted-foreground"
+          onClick={toggleSidebar}
+        >
+          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </Button>
+      </div>
       <SidebarContent className="pt-2">
         <SidebarGroup>
           <SidebarGroupContent>
