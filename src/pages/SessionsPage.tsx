@@ -57,8 +57,6 @@ function statusLabel(status: SessionStatus) {
 }
 
 export default function SessionsPage() {
-  const tableGridClass =
-    "md:grid-cols-[minmax(150px,1.2fr)_minmax(190px,1.3fr)_minmax(110px,0.8fr)_minmax(130px,0.9fr)_minmax(120px,0.8fr)_minmax(160px,1fr)_minmax(170px,1fr)]";
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -300,7 +298,7 @@ export default function SessionsPage() {
       </form>
 
       <div className="mt-6 rounded-xl border bg-card overflow-x-auto">
-        <div className={`hidden md:grid ${tableGridClass} gap-3 p-4 border-b text-xs text-muted-foreground`}>
+        <div className="hidden md:grid md:grid-cols-7 gap-3 p-4 border-b text-xs text-muted-foreground">
           <span>Клиент</span>
           <span>Начало</span>
           <span>Длительность</span>
@@ -317,7 +315,7 @@ export default function SessionsPage() {
             return (
               <div
                 key={session.id}
-                className={`grid ${tableGridClass} gap-2 p-4 border-b last:border-b-0 text-sm bg-muted/30`}
+                className="grid md:grid-cols-7 gap-2 p-4 border-b last:border-b-0 text-sm bg-muted/30"
               >
                 <div>
                   {canFullyEdit ? (
@@ -342,7 +340,7 @@ export default function SessionsPage() {
                     </span>
                   )}
                 </div>
-                <div className="space-y-1 min-w-0">
+                <div className="space-y-1 min-w-[170px]">
                   {canFullyEdit ? (
                     <>
                       <Input
@@ -433,7 +431,7 @@ export default function SessionsPage() {
           }
 
           return (
-            <div key={session.id} className={`grid ${tableGridClass} gap-2 p-4 border-b last:border-b-0 text-sm`}>
+            <div key={session.id} className="grid md:grid-cols-7 gap-2 p-4 border-b last:border-b-0 text-sm">
               <span className="font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
               <span className="text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
               <span className="text-muted-foreground">{session.duration_minutes} мин</span>
