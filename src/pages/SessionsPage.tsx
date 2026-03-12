@@ -58,7 +58,7 @@ function statusLabel(status: SessionStatus) {
 
 export default function SessionsPage() {
   const tableGridClass =
-    "md:grid-cols-[150px_210px_110px_120px_130px_minmax(150px,1fr)_140px]";
+    "md:grid-cols-[1.2fr_1.7fr_0.9fr_1fr_1fr_1.25fr_1.1fr]";
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -344,7 +344,7 @@ export default function SessionsPage() {
                 </div>
                 <div className="min-w-0">
                   {canFullyEdit ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       <Input
                         type="date"
                         value={editForm.start_date}
@@ -363,7 +363,7 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_time: event.target.value } : prev,
                           )
                         }
-                        className="h-9 w-[92px] flex-none pr-8"
+                        className="h-9 w-[86px] flex-none pr-8"
                       />
                     </div>
                   ) : (
@@ -407,7 +407,9 @@ export default function SessionsPage() {
                     <span className="block whitespace-nowrap">{session.price} RUB</span>
                   )}
                 </div>
-                <span className="block whitespace-nowrap">{statusLabel(session.status)}</span>
+                <span className="block min-w-0 truncate whitespace-nowrap">
+                  {statusLabel(session.status)}
+                </span>
                 <div className="min-w-0">
                   <Input
                     value={editForm.notes}
@@ -449,7 +451,9 @@ export default function SessionsPage() {
               <span className="block min-w-0 truncate text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
               <span className="block min-w-0 whitespace-nowrap text-muted-foreground">{session.duration_minutes} мин</span>
               <span className="block min-w-0 whitespace-nowrap">{session.price} RUB</span>
-              <span className="block min-w-0 whitespace-nowrap">{statusLabel(session.status)}</span>
+              <span className="block min-w-0 truncate whitespace-nowrap">
+                {statusLabel(session.status)}
+              </span>
               <span className="block min-w-0 truncate text-muted-foreground">{session.notes ?? "-"}</span>
               <div className="flex min-w-0 items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => startInlineEdit(session)}>
