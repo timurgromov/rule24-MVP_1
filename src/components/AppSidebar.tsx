@@ -2,7 +2,7 @@ import { NavLink } from "@/components/NavLink";
 import { Link, useLocation } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, useSidebar,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter, SidebarRail, useSidebar,
 } from "@/components/ui/sidebar";
 import { LayoutDashboard, CalendarDays, Users, Settings, MessageCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,7 @@ export function AppSidebar() {
           {!collapsed && <span className="text-xs">Выйти</span>}
         </Button>
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }
