@@ -57,6 +57,8 @@ function statusLabel(status: SessionStatus) {
 }
 
 export default function SessionsPage() {
+  const tableGridClass =
+    "md:[grid-template-columns:minmax(170px,1.15fr)_minmax(190px,1.2fr)_minmax(120px,0.8fr)_minmax(130px,0.85fr)_minmax(150px,0.9fr)_minmax(190px,1.1fr)_minmax(180px,1fr)]";
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -298,16 +300,17 @@ export default function SessionsPage() {
       </form>
 
       <div className="mt-6 rounded-xl border bg-card overflow-x-auto">
-        <div className="hidden md:grid md:grid-cols-7 gap-3 p-4 border-b text-xs text-muted-foreground">
-          <span>Клиент</span>
-          <span>Начало</span>
-          <span>Длительность</span>
-          <span>Цена</span>
-          <span>Статус</span>
-          <span>Заметки</span>
-          <span>Действия</span>
-        </div>
-        {filteredSessions.map((session) => {
+        <div className="min-w-[1160px]">
+          <div className={`hidden md:grid ${tableGridClass} gap-3 p-4 border-b text-xs text-muted-foreground`}>
+            <span>Клиент</span>
+            <span>Начало</span>
+            <span>Длительность</span>
+            <span>Цена</span>
+            <span>Статус</span>
+            <span>Заметки</span>
+            <span>Действия</span>
+          </div>
+          {filteredSessions.map((session) => {
           const isEditing = editingId === session.id && editForm !== null;
           const canFullyEdit = session.status === "scheduled";
 
@@ -315,9 +318,9 @@ export default function SessionsPage() {
             return (
               <div
                 key={session.id}
-                className="grid md:grid-cols-7 gap-2 p-4 border-b last:border-b-0 text-sm bg-muted/30"
+                className={`grid ${tableGridClass} gap-3 p-4 border-b last:border-b-0 text-sm bg-muted/30`}
               >
-                <div>
+                <div className="min-w-0">
                   {canFullyEdit ? (
                     <select
                       value={editForm.client_id}
@@ -326,7 +329,7 @@ export default function SessionsPage() {
                           prev ? { ...prev, client_id: event.target.value } : prev,
                         )
                       }
-                      className="w-full rounded-md border bg-background px-2 py-1 text-sm"
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                     >
                       {clients.map((client) => (
                         <option key={client.id} value={client.id}>
@@ -340,7 +343,7 @@ export default function SessionsPage() {
                     </span>
                   )}
                 </div>
-                <div className="space-y-1 min-w-[170px]">
+                <div className="min-w-0 space-y-2">
                   {canFullyEdit ? (
                     <>
                       <Input
@@ -351,7 +354,7 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_date: event.target.value } : prev,
                           )
                         }
-                        className="h-8 pr-9"
+                        className="h-10 pr-9"
                       />
                       <Input
                         type="time"
@@ -361,16 +364,16 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_time: event.target.value } : prev,
                           )
                         }
-                        className="h-8 pr-9"
+                        className="h-10 pr-9"
                       />
                     </>
                   ) : (
-                    <span className="text-muted-foreground">
+                    <span className="block text-muted-foreground">
                       {new Date(session.start_time).toLocaleString()}
                     </span>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   {canFullyEdit ? (
                     <Input
                       type="number"
@@ -381,13 +384,15 @@ export default function SessionsPage() {
                           prev ? { ...prev, duration_minutes: event.target.value } : prev,
                         )
                       }
-                      className="h-8"
+                      className="h-10"
                     />
                   ) : (
-                    <span className="text-muted-foreground">{session.duration_minutes} мин</span>
+                    <span className="block whitespace-nowrap text-muted-foreground">
+                      {session.duration_minutes} мин
+                    </span>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
                   {canFullyEdit ? (
                     <Input
                       type="number"
@@ -397,31 +402,40 @@ export default function SessionsPage() {
                       onChange={(event) =>
                         setEditForm((prev) => (prev ? { ...prev, price: event.target.value } : prev))
                       }
-                      className="h-8"
+                      className="h-10"
                     />
                   ) : (
-                    <span>{session.price} RUB</span>
+                    <span className="block whitespace-nowrap">{session.price} RUB</span>
                   )}
                 </div>
-                <span>{statusLabel(session.status)}</span>
-                <Input
-                  value={editForm.notes}
-                  onChange={(event) =>
-                    setEditForm((prev) => (prev ? { ...prev, notes: event.target.value } : prev))
-                  }
-                  placeholder="Комментарий к сессии"
-                  className="h-8"
-                />
-                <div className="flex flex-wrap gap-1">
+                <span className="block whitespace-nowrap">{statusLabel(session.status)}</span>
+                <div className="min-w-0">
+                  <Input
+                    value={editForm.notes}
+                    onChange={(event) =>
+                      setEditForm((prev) => (prev ? { ...prev, notes: event.target.value } : prev))
+                    }
+                    placeholder="Комментарий к сессии"
+                    className="h-10"
+                  />
+                </div>
+                <div className="flex min-w-0 flex-col gap-2">
                   <Button
                     size="sm"
                     onClick={() => void saveInlineEdit(session)}
                     disabled={savingEdit}
+                    className="w-full"
                   >
                     <Save className="h-3.5 w-3.5 mr-1" />
                     Сохранить
                   </Button>
-                  <Button variant="outline" size="sm" onClick={cancelInlineEdit} disabled={savingEdit}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={cancelInlineEdit}
+                    disabled={savingEdit}
+                    className="w-full"
+                  >
                     <X className="h-3.5 w-3.5 mr-1" />
                     Отмена
                   </Button>
@@ -431,14 +445,14 @@ export default function SessionsPage() {
           }
 
           return (
-            <div key={session.id} className="grid md:grid-cols-7 gap-2 p-4 border-b last:border-b-0 text-sm">
-              <span className="font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
-              <span className="text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
-              <span className="text-muted-foreground">{session.duration_minutes} мин</span>
-              <span>{session.price} RUB</span>
-              <span>{statusLabel(session.status)}</span>
-              <span className="text-muted-foreground">{session.notes ?? "-"}</span>
-              <div className="flex flex-wrap gap-1">
+            <div key={session.id} className={`grid ${tableGridClass} gap-3 p-4 border-b last:border-b-0 text-sm`}>
+              <span className="block min-w-0 font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
+              <span className="block min-w-0 text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
+              <span className="block min-w-0 whitespace-nowrap text-muted-foreground">{session.duration_minutes} мин</span>
+              <span className="block min-w-0 whitespace-nowrap">{session.price} RUB</span>
+              <span className="block min-w-0 whitespace-nowrap">{statusLabel(session.status)}</span>
+              <span className="block min-w-0 text-muted-foreground">{session.notes ?? "-"}</span>
+              <div className="flex min-w-0 gap-2">
                 <Button variant="outline" size="sm" onClick={() => startInlineEdit(session)}>
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>
@@ -454,10 +468,11 @@ export default function SessionsPage() {
               </div>
             </div>
           );
-        })}
-        {!loading && filteredSessions.length === 0 && (
-          <p className="p-6 text-sm text-muted-foreground text-center">Сессии не найдены</p>
-        )}
+          })}
+          {!loading && filteredSessions.length === 0 && (
+            <p className="p-6 text-sm text-muted-foreground text-center">Сессии не найдены</p>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border bg-card overflow-hidden">
