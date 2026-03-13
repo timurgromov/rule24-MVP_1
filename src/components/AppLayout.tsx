@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -15,6 +15,7 @@ export default function AppLayout() {
   const [confirmingSessionId, setConfirmingSessionId] = useState<number | null>(null);
   const { pathname } = useLocation();
   const isAuthenticatedApp = pathname.startsWith("/app");
+  const isDemoApp = pathname.startsWith("/demo");
 
   const clientMap = useMemo(
     () => new Map(clients.map((client) => [client.id, client.name])),
@@ -82,6 +83,21 @@ export default function AppLayout() {
             </div>
             <CreateSessionButton />
           </header>
+          {isDemoApp && (
+            <div className="border-b bg-primary/5 px-4 py-3">
+              <div className="flex flex-col gap-3 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Это демо-версия Rule24</p>
+                  <p className="text-xs text-muted-foreground">
+                    Здесь показан ознакомительный сценарий. Для основной версии перейдите на главную страницу.
+                  </p>
+                </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/">Перейти в основную версию</Link>
+                </Button>
+              </div>
+            </div>
+          )}
           {isAuthenticatedApp && attentionSessions.length > 0 && (
             <div className="border-b bg-amber-50 px-4 py-4">
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-4">

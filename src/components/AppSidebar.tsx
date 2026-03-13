@@ -22,6 +22,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const basePath = pathname.startsWith("/demo") ? "/demo" : "/app";
+  const logoPath = pathname.startsWith("/demo") ? "/" : basePath;
   const items = [
     { title: "Дашборд", url: basePath, icon: LayoutDashboard },
     { title: "Сессии", url: `${basePath}/sessions`, icon: CalendarDays },
@@ -33,7 +34,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-3">
         <Link
-          to={basePath}
+          to={logoPath}
           className="flex min-w-0 items-center gap-2 hover:opacity-90 transition-opacity"
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
