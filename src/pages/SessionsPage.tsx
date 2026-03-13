@@ -3,6 +3,7 @@ import { CalendarClock, Edit2, Save, Search, X, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ClientCombobox } from "@/components/ClientCombobox";
 import {
   api,
   ApiError,
@@ -235,21 +236,15 @@ export default function SessionsPage() {
       <form onSubmit={submitSession} className="rounded-xl border bg-card p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="space-y-1">
           <label className="text-sm text-muted-foreground">Клиент</label>
-          <select
+          <ClientCombobox
+            clients={clients}
             value={createForm.client_id}
-            onChange={(event) =>
-              setCreateForm((prev) => ({ ...prev, client_id: event.target.value }))
-            }
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            required
-          >
-            <option value="">Клиент</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setCreateForm((prev) => ({ ...prev, client_id: value }))}
+            placeholder="Выберите клиента"
+            searchPlaceholder="Найти клиента"
+            emptyText="Клиент не найден"
+            buttonClassName="h-10 rounded-md"
+          />
         </div>
         <div className="space-y-1">
           <label className="text-sm text-muted-foreground">Дата сессии</label>
@@ -338,21 +333,19 @@ export default function SessionsPage() {
               >
                 <div className="min-w-0">
                   {canFullyEdit ? (
-                    <select
+                    <ClientCombobox
+                      clients={clients}
                       value={editForm.client_id}
-                      onChange={(event) =>
+                      onChange={(value) =>
                         setEditForm((prev) =>
-                          prev ? { ...prev, client_id: event.target.value } : prev,
+                          prev ? { ...prev, client_id: value } : prev,
                         )
                       }
-                      className="h-9 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                    >
-                      {clients.map((client) => (
-                        <option key={client.id} value={client.id}>
-                          {client.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Выберите клиента"
+                      searchPlaceholder="Найти клиента"
+                      emptyText="Клиент не найден"
+                      buttonClassName="h-9 rounded-md"
+                    />
                   ) : (
                     <span className="block truncate font-medium">
                       {clientMap.get(session.client_id) ?? `#${session.client_id}`}
