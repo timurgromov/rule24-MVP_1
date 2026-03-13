@@ -233,7 +233,11 @@ export default function SessionsPage() {
         </div>
       </div>
 
-      <form onSubmit={submitSession} className="rounded-xl border bg-card p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <form
+        id="create-session"
+        onSubmit={submitSession}
+        className="scroll-mt-20 rounded-xl border bg-card p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      >
         <div className="space-y-1">
           <label className="text-sm text-muted-foreground">Клиент</label>
           <ClientCombobox
