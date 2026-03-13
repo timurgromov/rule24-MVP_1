@@ -32,7 +32,10 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-3">
-        <Link to="/" className="flex min-w-0 items-center gap-2 hover:opacity-90 transition-opacity">
+        <Link
+          to={basePath}
+          className="flex min-w-0 items-center gap-2 hover:opacity-90 transition-opacity"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
             R
           </div>
