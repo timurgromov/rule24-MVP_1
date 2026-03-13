@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Edit2, Save, Search, X, XCircle } from "lucide-react";
-import { useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import {
   ApiError,
   ClientDto,
   SessionDto,
-  SessionOutcomeType,
   SessionStatus,
   TransactionDto,
 } from "@/lib/api";
@@ -58,16 +56,6 @@ function statusLabel(status: SessionStatus) {
   return "Запланирована";
 }
 
-function outcomeActionLabel(outcomeType: SessionOutcomeType) {
-  if (outcomeType === "completed") return "Сессия состоялась";
-  if (outcomeType === "late_cancellation") return "Поздняя отмена";
-  return "Неявка";
-}
-
-function formatSessionDateTime(value: string) {
-  return new Date(value).toLocaleString("ru-RU");
-}
-
 function notifyAttentionUpdated() {
   window.dispatchEvent(new Event("rule24-attention-updated"));
 }
@@ -76,7 +64,6 @@ export default function SessionsPage() {
   const tableGridClass =
     "md:grid-cols-[1.2fr_1.7fr_0.9fr_1fr_1fr_1.25fr_1.1fr]";
   const [sessions, setSessions] = useState<SessionDto[]>([]);
-  const [attentionSessions, setAttentionSessions] = useState<SessionDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [clients, setClients] = useState<ClientDto[]>([]);
   const [createForm, setCreateForm] = useState<SessionForm>(emptySessionForm);
@@ -85,21 +72,17 @@ export default function SessionsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<SessionForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [confirmingSessionId, setConfirmingSessionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const { hash } = useLocation();
 
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [sessionsData, attentionData, clientsData, transactionsData] = await Promise.all([
+      const [sessionsData, clientsData, transactionsData] = await Promise.all([
         api.listSessions(),
-        api.listSessionsRequiresAttention(),
         api.listClients(),
         api.listTransactions(),
       ]);
       setSessions(sessionsData);
-      setAttentionSessions(attentionData);
       setClients(clientsData);
       setTransactions(transactionsData);
     } catch (err) {
@@ -112,14 +95,10 @@ export default function SessionsPage() {
 
   useEffect(() => {
     void loadAll();
+    const handleRefresh = () => void loadAll();
+    window.addEventListener("rule24-attention-updated", handleRefresh);
+    return () => window.removeEventListener("rule24-attention-updated", handleRefresh);
   }, []);
-
-  useEffect(() => {
-    if (hash !== "#requires-attention") return;
-    const section = document.getElementById("requires-attention");
-    if (!section) return;
-    section.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [hash, attentionSessions.length]);
 
   const clientMap = useMemo(
     () => new Map(clients.map((client) => [client.id, client.name])),
@@ -226,24 +205,6 @@ export default function SessionsPage() {
     }
   };
 
-  const confirmOutcome = async (sessionId: number, outcomeType: SessionOutcomeType) => {
-    setConfirmingSessionId(sessionId);
-    try {
-      await api.confirmSessionOutcome(sessionId, { outcome_type: outcomeType });
-      toast({
-        title: "Итог подтвержден",
-        description: outcomeActionLabel(outcomeType),
-      });
-      await loadAll();
-      notifyAttentionUpdated();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.detail : "Failed to confirm session outcome";
-      toast({ title: "Ошибка", description: message, variant: "destructive" });
-    } finally {
-      setConfirmingSessionId(null);
-    }
-  };
-
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -347,65 +308,6 @@ export default function SessionsPage() {
           </Button>
         </div>
       </form>
-
-      {attentionSessions.length > 0 && (
-        <section id="requires-attention" className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-4">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Требует внимания</h2>
-            <p className="text-sm text-muted-foreground">
-              Есть прошедшие сессии без подтвержденного итога
-            </p>
-          </div>
-          <div className="space-y-3">
-            {attentionSessions.map((session) => (
-              <div
-                key={session.id}
-                className="rounded-lg border border-amber-200 bg-background p-3 space-y-3"
-              >
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {clientMap.get(session.client_id) ?? `Клиент #${session.client_id}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatSessionDateTime(session.start_time)} · {session.duration_minutes} мин · {session.price} RUB
-                    </p>
-                  </div>
-                  <span className="text-xs font-medium text-amber-700">
-                    Нужно подтвердить итог
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={confirmingSessionId === session.id}
-                    onClick={() => void confirmOutcome(session.id, "completed")}
-                  >
-                    Сессия состоялась
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={confirmingSessionId === session.id}
-                    onClick={() => void confirmOutcome(session.id, "late_cancellation")}
-                  >
-                    Поздняя отмена
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={confirmingSessionId === session.id}
-                    onClick={() => void confirmOutcome(session.id, "no_show")}
-                  >
-                    Неявка
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <div className="mt-6 rounded-xl border bg-card overflow-hidden">
           <div className={`hidden md:grid ${tableGridClass} gap-3 p-4 border-b text-xs text-muted-foreground`}>
