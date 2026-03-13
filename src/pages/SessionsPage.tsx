@@ -56,6 +56,13 @@ function statusLabel(status: SessionStatus) {
   return "Запланирована";
 }
 
+function outcomeLabel(outcomeType: SessionDto["outcome_type"]) {
+  if (outcomeType === "completed") return "Сессия состоялась";
+  if (outcomeType === "late_cancellation") return "Поздняя отмена";
+  if (outcomeType === "no_show") return "Неявка";
+  return null;
+}
+
 function notifyAttentionUpdated() {
   window.dispatchEvent(new Event("rule24-attention-updated"));
 }
@@ -463,8 +470,13 @@ export default function SessionsPage() {
               <span className="block min-w-0 whitespace-nowrap">{session.price} RUB</span>
               <div className="min-w-0">
                 <span className="block truncate whitespace-nowrap">{statusLabel(session.status)}</span>
+                {session.outcome_confirmed && outcomeLabel(session.outcome_type) && (
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    Итог: {outcomeLabel(session.outcome_type)}
+                  </span>
+                )}
                 {!session.outcome_confirmed && new Date(session.start_time) < new Date() && (
-                  <span className="mt-1 block text-xs text-amber-700">Нужно подтвердить итог</span>
+                  <span className="mt-1 block text-xs text-amber-700">Итог не подтвержден</span>
                 )}
               </div>
               <span className="block min-w-0 truncate text-muted-foreground">{session.notes ?? "-"}</span>
