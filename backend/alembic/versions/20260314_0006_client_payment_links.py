@@ -24,6 +24,7 @@ client_payment_link_status = postgresql.ENUM(
     "completed",
     "expired",
     name="client_payment_link_status",
+    create_type=False,
 )
 
 
