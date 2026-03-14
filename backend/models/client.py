@@ -23,3 +23,6 @@ class Client(TimestampMixin, Base):
     )
     sessions: Mapped[list["Session"]] = relationship(back_populates="client")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates="client")
+    client_payment_links: Mapped[list["ClientPaymentLink"]] = relationship(
+        back_populates="client"
+    )
