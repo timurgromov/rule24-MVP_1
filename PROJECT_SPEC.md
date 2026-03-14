@@ -289,6 +289,55 @@ Do not mix them in one generic payment system.
 
 ---
 
+## Client payment link architecture
+
+This is a core Rule24 product object and an architectural gap in the current backend.
+
+Important:
+- the Rule24 client link is not the same as YooKassa `confirmation_url`
+- the client link must be a separate backend entity
+- the client link is the public entry point for the client into the Rule24 flow
+- this flow must work without therapist JWT
+
+Current state:
+- demo previously showed this as a visual placeholder
+- backend currently has no dedicated server-side client link entity or lifecycle model
+- implementation must be additive and MVP-safe
+
+Entity purpose:
+- connect therapist session/client to a public client-facing setup flow
+
+Minimum fields:
+- id
+- session_id
+- client_id
+- public_token (or slug)
+- status
+- created_at
+- opened_at
+- completed_at
+- expired_at
+
+Suggested statuses:
+- created
+- opened
+- completed
+- expired
+
+Lifecycle:
+1. Therapist generates link.
+2. Client opens link.
+3. Client sees session/payment context.
+4. Client confirms setup and attaches card.
+5. System marks link completion.
+
+Semantic rule:
+- Rule24 client link = product-level public flow object
+- YooKassa `confirmation_url` = external provider redirect inside that flow
+- these objects must never be treated as the same thing
+
+---
+
 ## 8. Backend Requirements
 
 The backend must include:

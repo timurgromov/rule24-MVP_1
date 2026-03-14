@@ -120,6 +120,17 @@ Phase 8 architecture requirements:
 
 ---
 
+## Phase 9.1 — Client payment link architecture
+- [ ] Design client link entity
+- [ ] Add public token-based client access
+- [ ] Add client link lifecycle fields
+- [ ] Create endpoint to generate client link
+- [ ] Create public client payment page
+- [ ] Connect card attachment flow through public link
+- [ ] Persist link open/completion state
+
+---
+
 ## Phase 10 — Subscription billing for Rule24
 - [ ] Design subscription model
 - [ ] Add subscription status to backend
