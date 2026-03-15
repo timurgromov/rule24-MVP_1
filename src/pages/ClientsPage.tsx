@@ -16,6 +16,20 @@ type ClientForm = {
 
 const emptyForm: ClientForm = { name: "", email: "", phone: "", notes: "" };
 
+function formatCardBindingStatus(client: ClientDto): string {
+  if (!client.has_saved_payment_method) return "Не привязана";
+  const brand = (client.card_brand ?? "Карта").toUpperCase();
+  const last4 = client.card_last4 ? ` ****${client.card_last4}` : "";
+  const boundAt = client.payment_method_bound_at
+    ? new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date(client.payment_method_bound_at))
+    : null;
+  return boundAt ? `${brand}${last4} · ${boundAt}` : `${brand}${last4}`;
+}
+
 export default function ClientsPage() {
   const [clients, setClients] = useState<ClientDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,7 +202,7 @@ export default function ClientsPage() {
           <span>Имя</span>
           <span>Email</span>
           <span>Телефон</span>
-          <span>Заметки</span>
+          <span>Карта</span>
           <span>Действия</span>
         </div>
         {filteredClients.map((client) => (
@@ -199,7 +213,11 @@ export default function ClientsPage() {
             <span className="font-medium">{client.name}</span>
             <span className="text-muted-foreground">{client.email ?? "-"}</span>
             <span className="text-muted-foreground">{client.phone ?? "-"}</span>
-            <span className="text-muted-foreground">{client.notes ?? "-"}</span>
+            <div className="min-w-0">
+              <span className="block truncate text-muted-foreground">
+                {formatCardBindingStatus(client)}
+              </span>
+            </div>
             <div className="flex gap-1">
               <Button size="sm" variant="outline" onClick={() => startEdit(client)}>
                 <Pencil className="h-3.5 w-3.5" />

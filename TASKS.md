@@ -150,6 +150,7 @@ Phase 8 architecture requirements:
 - [x] Fix Sessions inline date/time edit layout to prevent input overflow in table row
 - [x] Replace noisy penalty guidance text with direct card-bound status in Sessions table
 - [x] Expose client card-binding state from backend for clear operator visibility
+- [x] Show card-binding status directly in Clients list instead of low-signal notes column
 
 ---
 
