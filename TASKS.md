@@ -128,6 +128,7 @@ Phase 8 architecture requirements:
 - [x] Create public client payment page
 - [x] Connect card attachment flow through public link
 - [x] Persist link open/completion state
+- [x] Add therapist UI controls to generate/copy/open client links
 
 ---
 

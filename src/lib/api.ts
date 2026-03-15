@@ -100,6 +100,19 @@ export type PublicClientLinkDto = {
   expired_at: string | null;
 };
 
+export type ClientPaymentLinkDto = {
+  id: number;
+  session_id: number;
+  client_id: number;
+  public_token: string;
+  status: "created" | "opened" | "completed" | "expired";
+  client_url_path: string;
+  created_at: string;
+  opened_at: string | null;
+  completed_at: string | null;
+  expired_at: string | null;
+};
+
 export type PenaltyChargeOut = {
   transaction_id: number;
   session_id: number;
@@ -249,6 +262,12 @@ export const api = {
     request<CardAttachmentInitOut>(`/payments/clients/${clientId}/attach-card`, {
       method: "POST",
     }),
+  createClientLink: (sessionId: number) =>
+    request<ClientPaymentLinkDto>(`/client-links/sessions/${sessionId}`, {
+      method: "POST",
+    }),
+  getLatestClientLink: (sessionId: number) =>
+    request<ClientPaymentLinkDto>(`/client-links/sessions/${sessionId}/latest`),
   getPublicClientLink: (publicToken: string) =>
     request<PublicClientLinkDto>(`/public/client-links/${publicToken}`, {
       auth: false,

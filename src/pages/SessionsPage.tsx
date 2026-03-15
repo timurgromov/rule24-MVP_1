@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Edit2, Save, Search, X, XCircle } from "lucide-react";
+import { CalendarClock, Copy, Edit2, ExternalLink, Link2, Save, Search, X, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import {
   api,
   ApiError,
   ClientDto,
+  ClientPaymentLinkDto,
   SessionDto,
   SessionStatus,
   TransactionDto,
@@ -81,6 +82,10 @@ export default function SessionsPage() {
   const [editForm, setEditForm] = useState<SessionForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [linksBySessionId, setLinksBySessionId] = useState<Record<number, ClientPaymentLinkDto>>(
+    {},
+  );
+  const [linkActionSessionId, setLinkActionSessionId] = useState<number | null>(null);
 
   const loadAll = async () => {
     setLoading(true);
@@ -211,6 +216,56 @@ export default function SessionsPage() {
       const message = err instanceof ApiError ? err.detail : "Failed to cancel session";
       toast({ title: "Ошибка", description: message, variant: "destructive" });
     }
+  };
+
+  const toClientLinkUrl = (token: string) => `${window.location.origin}/pay/${token}`;
+
+  const createClientLink = async (sessionId: number): Promise<ClientPaymentLinkDto | null> => {
+    setLinkActionSessionId(sessionId);
+    try {
+      const link = await api.createClientLink(sessionId);
+      setLinksBySessionId((prev) => ({ ...prev, [sessionId]: link }));
+      toast({ title: "Ссылка создана" });
+      return link;
+    } catch (err) {
+      const message = err instanceof ApiError ? err.detail : "Failed to create client link";
+      toast({ title: "Ошибка", description: message, variant: "destructive" });
+      return null;
+    } finally {
+      setLinkActionSessionId(null);
+    }
+  };
+
+  const getLatestClientLink = async (sessionId: number): Promise<ClientPaymentLinkDto | null> => {
+    setLinkActionSessionId(sessionId);
+    try {
+      const link = await api.getLatestClientLink(sessionId);
+      setLinksBySessionId((prev) => ({ ...prev, [sessionId]: link }));
+      return link;
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        toast({ title: "Ссылка не найдена", description: "Сначала сгенерируйте ссылку." });
+        return null;
+      }
+      const message = err instanceof ApiError ? err.detail : "Failed to load client link";
+      toast({ title: "Ошибка", description: message, variant: "destructive" });
+      return null;
+    } finally {
+      setLinkActionSessionId(null);
+    }
+  };
+
+  const copyClientLink = async (sessionId: number) => {
+    const link = linksBySessionId[sessionId] ?? (await getLatestClientLink(sessionId));
+    if (!link) return;
+    await navigator.clipboard.writeText(toClientLinkUrl(link.public_token));
+    toast({ title: "Ссылка скопирована" });
+  };
+
+  const openClientLink = async (sessionId: number) => {
+    const link = linksBySessionId[sessionId] ?? (await getLatestClientLink(sessionId));
+    if (!link) return;
+    window.open(`/pay/${link.public_token}`, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -477,19 +532,55 @@ export default function SessionsPage() {
                 )}
               </div>
               <span className="block min-w-0 truncate text-muted-foreground">{session.notes ?? "-"}</span>
-              <div className="flex min-w-0 items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => startInlineEdit(session)}>
-                  <Edit2 className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void cancelSession(session.id)}
-                  className="text-destructive"
-                  disabled={session.status !== "scheduled"}
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                </Button>
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => startInlineEdit(session)}>
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void cancelSession(session.id)}
+                    className="text-destructive"
+                    disabled={session.status !== "scheduled"}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void createClientLink(session.id)}
+                    disabled={linkActionSessionId === session.id}
+                  >
+                    <Link2 className="h-3.5 w-3.5 mr-1" />
+                    Сгенерировать
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void copyClientLink(session.id)}
+                    disabled={linkActionSessionId === session.id}
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    Скопировать
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void openClientLink(session.id)}
+                    disabled={linkActionSessionId === session.id}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                    Открыть
+                  </Button>
+                </div>
+                {linksBySessionId[session.id] && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    /pay/{linksBySessionId[session.id].public_token}
+                  </span>
+                )}
               </div>
             </div>
           );

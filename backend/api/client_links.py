@@ -74,3 +74,40 @@ def create_client_payment_link(
         completed_at=link.completed_at,
         expired_at=link.expired_at,
     )
+
+
+@router.get(
+    "/sessions/{session_id}/latest",
+    response_model=ClientPaymentLinkOut,
+    summary="Get latest client payment link for a session",
+)
+def get_latest_client_payment_link(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ClientPaymentLinkOut:
+    current_session = _get_owned_session_or_404(db, current_user.id, session_id)
+
+    link = db.scalar(
+        select(ClientPaymentLink)
+        .where(ClientPaymentLink.session_id == current_session.id)
+        .order_by(ClientPaymentLink.created_at.desc())
+    )
+    if link is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client link not found",
+        )
+
+    return ClientPaymentLinkOut(
+        id=link.id,
+        session_id=link.session_id,
+        client_id=link.client_id,
+        public_token=link.public_token,
+        status=link.status,
+        client_url_path=f"/pay/{link.public_token}",
+        created_at=link.created_at,
+        opened_at=link.opened_at,
+        completed_at=link.completed_at,
+        expired_at=link.expired_at,
+    )
