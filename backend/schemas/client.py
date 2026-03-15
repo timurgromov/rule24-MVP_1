@@ -24,6 +24,7 @@ class ClientOut(BaseModel):
     email: EmailStr | None
     phone: str | None
     notes: str | None
+    archived_at: datetime | None
     created_at: datetime
     updated_at: datetime
 

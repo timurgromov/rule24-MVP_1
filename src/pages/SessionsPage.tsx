@@ -92,7 +92,7 @@ export default function SessionsPage() {
     try {
       const [sessionsData, clientsData, transactionsData] = await Promise.all([
         api.listSessions(),
-        api.listClients(),
+        api.listClients({ includeArchived: true }),
         api.listTransactions(),
       ]);
       setSessions(sessionsData);
@@ -115,6 +115,10 @@ export default function SessionsPage() {
 
   const clientMap = useMemo(
     () => new Map(clients.map((client) => [client.id, client.name])),
+    [clients],
+  );
+  const activeClients = useMemo(
+    () => clients.filter((client) => client.archived_at === null),
     [clients],
   );
 
@@ -307,7 +311,7 @@ export default function SessionsPage() {
         <div className="space-y-1">
           <label className="text-sm text-muted-foreground">Клиент</label>
           <ClientCombobox
-            clients={clients}
+            clients={activeClients}
             value={createForm.client_id}
             onChange={(value) => setCreateForm((prev) => ({ ...prev, client_id: value }))}
             placeholder="Выберите клиента"
@@ -404,7 +408,7 @@ export default function SessionsPage() {
                 <div className="min-w-0">
                   {canFullyEdit ? (
                     <ClientCombobox
-                      clients={clients}
+                      clients={activeClients}
                       value={editForm.client_id}
                       onChange={(value) =>
                         setEditForm((prev) =>

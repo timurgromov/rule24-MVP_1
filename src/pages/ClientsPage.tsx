@@ -103,7 +103,7 @@ export default function ClientsPage() {
         setEditingId(null);
         setForm(emptyForm);
       }
-      toast({ title: "Клиент удален" });
+      toast({ title: "Клиент архивирован" });
     } catch (err) {
       const message = err instanceof ApiError ? err.detail : "Failed to delete client";
       toast({ title: "Ошибка", description: message, variant: "destructive" });
@@ -200,6 +200,9 @@ export default function ClientsPage() {
           <p className="p-6 text-sm text-muted-foreground text-center">Клиенты не найдены</p>
         )}
       </div>
+      <p className="text-xs text-muted-foreground">
+        Архивные клиенты скрываются из списка, но сохраняются в истории сессий и платежей.
+      </p>
     </div>
   );
 }

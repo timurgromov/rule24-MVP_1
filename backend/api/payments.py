@@ -17,7 +17,13 @@ router = APIRouter(prefix="/payments", tags=["payments"])
 
 
 def _get_owned_client_or_404(db: Session, user_id: int, client_id: int) -> Client:
-    client = db.scalar(select(Client).where(Client.id == client_id, Client.user_id == user_id))
+    client = db.scalar(
+        select(Client).where(
+            Client.id == client_id,
+            Client.user_id == user_id,
+            Client.archived_at.is_(None),
+        )
+    )
     if client is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

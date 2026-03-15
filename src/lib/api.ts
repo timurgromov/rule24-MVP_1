@@ -39,6 +39,7 @@ export type ClientDto = {
   email: string | null;
   phone: string | null;
   notes: string | null;
+  archived_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -208,7 +209,10 @@ export const api = {
   },
   me: () => request<AuthUser>("/auth/me"),
 
-  listClients: () => request<ClientDto[]>("/clients"),
+  listClients: (options?: { includeArchived?: boolean }) =>
+    request<ClientDto[]>(
+      `/clients${options?.includeArchived ? "?include_archived=true" : ""}`,
+    ),
   createClient: (payload: {
     name: string;
     email?: string | null;

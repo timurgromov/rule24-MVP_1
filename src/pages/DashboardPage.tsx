@@ -99,7 +99,7 @@ export default function DashboardPage() {
           api.me(),
           api.listSessions(),
           api.listTransactions(),
-          api.listClients(),
+          api.listClients({ includeArchived: true }),
           api.listSessionsRequiresAttention(),
         ]);
         setCurrentUser(user);

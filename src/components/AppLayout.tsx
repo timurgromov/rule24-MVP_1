@@ -38,7 +38,10 @@ export default function AppLayout() {
     }
 
     const loadAttentionData = () => {
-      Promise.all([api.listSessionsRequiresAttention(), api.listClients()])
+      Promise.all([
+        api.listSessionsRequiresAttention(),
+        api.listClients({ includeArchived: true }),
+      ])
         .then(([sessions, clientList]) => {
           setAttentionSessions(sessions);
           setClients(clientList);

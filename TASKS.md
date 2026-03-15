@@ -136,6 +136,7 @@ Phase 8 architecture requirements:
 - [x] Start late-cancellation penalty flow directly from session cancel endpoint
 - [x] Return actual penalty transaction/error state in cancel response for UI feedback
 - [x] Mark public client link as completed only after successful attach-card webhook outcome
+- [x] Replace physical client delete with archive-safe behavior that preserves history
 
 ---
 
