@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from api.client_links import create_client_payment_link_record
 from api.deps import get_current_user
 from db.session import get_db
 from models.client import Client
@@ -87,6 +88,12 @@ def create_session(
         notes=payload.notes,
     )
     db.add(new_session)
+    db.flush()
+    create_client_payment_link_record(
+        db=db,
+        session_id=new_session.id,
+        client_id=new_session.client_id,
+    )
     db.commit()
     db.refresh(new_session)
     return SessionOut.model_validate(new_session)

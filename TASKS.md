@@ -144,6 +144,8 @@ Phase 8 architecture requirements:
 - [x] Mark subscription/settings blocks as MVP preview where behavior is not fully automated yet
 - [x] Improve dashboard action clarity and empty-state guidance
 - [x] Improve clients page guidance around archive-safe workflow
+- [x] Simplify Sessions table by removing low-signal columns and secondary visual noise
+- [x] Auto-generate client link on session creation and make copy action primary
 
 ---
 

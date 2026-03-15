@@ -300,9 +300,8 @@ Important:
 - this flow must work without therapist JWT
 
 Current state:
-- demo previously showed this as a visual placeholder
-- backend currently has no dedicated server-side client link entity or lifecycle model
-- implementation must be additive and MVP-safe
+- backend has dedicated server-side client link entity and lifecycle model
+- implementation remains additive and MVP-safe
 
 Entity purpose:
 - connect therapist session/client to a public client-facing setup flow
@@ -325,7 +324,7 @@ Suggested statuses:
 - expired
 
 Lifecycle:
-1. Therapist generates link.
+1. Therapist creates session, system auto-generates link.
 2. Client opens link.
 3. Client sees session/payment context.
 4. Client confirms setup and attaches card.

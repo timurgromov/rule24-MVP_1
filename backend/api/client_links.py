@@ -46,6 +46,22 @@ def _build_client_url(public_token: str) -> tuple[str, str]:
     return client_url_path, f"{settings.app_public_url.rstrip('/')}{client_url_path}"
 
 
+def create_client_payment_link_record(
+    db: Session,
+    session_id: int,
+    client_id: int,
+) -> ClientPaymentLink:
+    link = ClientPaymentLink(
+        session_id=session_id,
+        client_id=client_id,
+        public_token=_generate_public_token(db),
+        status=ClientPaymentLinkStatus.created,
+    )
+    db.add(link)
+    db.flush()
+    return link
+
+
 @router.post(
     "/sessions/{session_id}",
     response_model=ClientPaymentLinkOut,
@@ -59,13 +75,11 @@ def create_client_payment_link(
 ) -> ClientPaymentLinkOut:
     current_session = _get_owned_session_or_404(db, current_user.id, session_id)
 
-    link = ClientPaymentLink(
+    link = create_client_payment_link_record(
+        db=db,
         session_id=current_session.id,
         client_id=current_session.client_id,
-        public_token=_generate_public_token(db),
-        status=ClientPaymentLinkStatus.created,
     )
-    db.add(link)
     db.commit()
     db.refresh(link)
     client_url_path, client_url = _build_client_url(link.public_token)
