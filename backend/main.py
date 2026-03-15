@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.auth import router as auth_router
 from api.cancellation_rules import router as cancellation_rules_router
+from api.client_links import router as client_links_router
 from api.clients import router as clients_router
 from api.health import router as health_router
 from api.payments import router as payments_router
@@ -29,6 +30,7 @@ app.include_router(auth_router, prefix=settings.api_prefix)
 app.include_router(private_router, prefix=settings.api_prefix)
 app.include_router(clients_router, prefix=settings.api_prefix)
 app.include_router(sessions_router, prefix=settings.api_prefix)
+app.include_router(client_links_router, prefix=settings.api_prefix)
 app.include_router(cancellation_rules_router, prefix=settings.api_prefix)
 app.include_router(payments_router, prefix=settings.api_prefix)
 app.include_router(webhooks_router, prefix=settings.api_prefix)
