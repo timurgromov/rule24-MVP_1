@@ -90,10 +90,15 @@ export default function SettingsPage() {
             <Badge variant={yooConnected ? "success" : "muted"} className="ml-auto text-[11px]">
               {yooConnected ? "Подключено" : "Не подключено"}
             </Badge>
+            <Badge variant="outline" className="text-[11px]">MVP</Badge>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
             Приём оплат от клиентов за сессии. Привязка карты клиента и автоматические
             списания.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Этот блок отражает текущий сценарий MVP. Для полного production-flow понадобятся реальные
+            YooKassa credentials и webhook.
           </p>
           <a
             href="#"
@@ -132,7 +137,10 @@ export default function SettingsPage() {
               1 месяц бесплатно · после — 1 490 ₽/мес
             </p>
           </div>
-          <Badge variant="success">Активен</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="success">Активен</Badge>
+            <Badge variant="outline">Preview</Badge>
+          </div>
         </div>
 
         <div className="rounded-lg bg-muted/50 p-3 space-y-1">
@@ -167,6 +175,10 @@ export default function SettingsPage() {
 
         <div className="space-y-3">
           <p className="text-xs font-medium text-foreground">Карта для оплаты Rule24</p>
+          <p className="text-xs text-muted-foreground">
+            Сейчас это UX-preview блока подписки. Реальная автоматическая оплата Rule24 еще не
+            подключена к backend billing flow.
+          </p>
           {cardBound ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">

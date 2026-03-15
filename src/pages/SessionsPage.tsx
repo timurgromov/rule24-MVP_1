@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Edit2, ExternalLink, Link2, Save, Search, X, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ClientCombobox } from "@/components/ClientCombobox";
 import {
@@ -65,6 +66,22 @@ function outcomeLabel(outcomeType: SessionDto["outcome_type"]) {
   return null;
 }
 
+function linkStatusMeta(status: ClientPaymentLinkDto["status"] | null) {
+  if (status === "completed") return { label: "Карта привязана", variant: "success" as const };
+  if (status === "opened") return { label: "Ссылка открыта", variant: "warning" as const };
+  if (status === "created") return { label: "Ссылка создана", variant: "secondary" as const };
+  if (status === "expired") return { label: "Ссылка истекла", variant: "danger" as const };
+  return { label: "Ссылка не создана", variant: "muted" as const };
+}
+
+function transactionStatusMeta(status: TransactionDto["status"] | null) {
+  if (status === "paid") return { label: "Штраф оплачен", variant: "success" as const };
+  if (status === "pending") return { label: "Штраф в обработке", variant: "warning" as const };
+  if (status === "failed") return { label: "Штраф не прошел", variant: "danger" as const };
+  if (status === "refunded") return { label: "Штраф возвращен", variant: "secondary" as const };
+  return { label: "Штрафа нет", variant: "muted" as const };
+}
+
 function notifyAttentionUpdated() {
   window.dispatchEvent(new Event("rule24-attention-updated"));
 }
@@ -121,6 +138,15 @@ export default function SessionsPage() {
     () => clients.filter((client) => client.archived_at === null),
     [clients],
   );
+  const latestTransactionBySessionId = useMemo(() => {
+    const map = new Map<number, TransactionDto>();
+    for (const tx of transactions) {
+      if (!map.has(tx.session_id)) {
+        map.set(tx.session_id, tx);
+      }
+    }
+    return map;
+  }, [transactions]);
 
   const filteredSessions = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -531,6 +557,13 @@ export default function SessionsPage() {
 
           return (
             <div key={session.id} className={`grid ${tableGridClass} items-center gap-3 p-4 border-b last:border-b-0 text-sm`}>
+              {(() => {
+                const link = linksBySessionId[session.id] ?? null;
+                const transaction = latestTransactionBySessionId.get(session.id) ?? null;
+                const linkMeta = linkStatusMeta(link?.status ?? null);
+                const transactionMeta = transactionStatusMeta(transaction?.status ?? null);
+                return (
+                  <>
               <span className="block min-w-0 truncate font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
               <span className="block min-w-0 truncate text-muted-foreground">{new Date(session.start_time).toLocaleString()}</span>
               <span className="block min-w-0 whitespace-nowrap text-muted-foreground">{session.duration_minutes} мин</span>
@@ -548,6 +581,10 @@ export default function SessionsPage() {
               </div>
               <span className="block min-w-0 truncate text-muted-foreground">{session.notes ?? "-"}</span>
               <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={linkMeta.variant}>{linkMeta.label}</Badge>
+                  <Badge variant={transactionMeta.variant}>{transactionMeta.label}</Badge>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => startInlineEdit(session)}>
                     <Edit2 className="h-3.5 w-3.5" />
@@ -601,7 +638,15 @@ export default function SessionsPage() {
                     </span>
                   </div>
                 )}
+                {!transaction && session.status === "cancelled" && (
+                  <span className="text-xs text-muted-foreground">
+                    Если штраф не появился, проверьте: есть ли у клиента привязанная карта и настроена ли YooKassa.
+                  </span>
+                )}
               </div>
+                  </>
+                );
+              })()}
             </div>
           );
           })}

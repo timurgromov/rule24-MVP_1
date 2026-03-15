@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ExternalLink, ShieldCheck } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { api, ApiError, PublicClientLinkDto } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
@@ -67,31 +68,43 @@ export default function PaymentPage() {
           </div>
         ) : (
           <div className="rounded-xl border bg-card p-5 space-y-3">
-            <p className="text-sm">Клиент: {link.client_name}</p>
-            <p className="text-sm">Session ID: {link.session_id}</p>
-            <p className="text-sm">Start: {new Date(link.session_start_time).toLocaleString()}</p>
-            <p className="text-sm">Duration: {link.session_duration_minutes} мин</p>
-            <p className="text-sm font-medium">Price: {link.session_price} RUB</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">Клиент: {link.client_name}</p>
+              <Badge variant={link.status === "completed" ? "success" : "secondary"}>
+                {link.status === "completed" ? "Карта привязана" : "Ожидается действие"}
+              </Badge>
+            </div>
+            <p className="text-sm">Сессия №{link.session_id}</p>
+            <p className="text-sm">Дата и время: {new Date(link.session_start_time).toLocaleString()}</p>
+            <p className="text-sm">Длительность: {link.session_duration_minutes} мин</p>
+            <p className="text-sm font-medium">Стоимость: {link.session_price} RUB</p>
             {link.session_notes ? (
-              <p className="text-sm text-muted-foreground">Notes: {link.session_notes}</p>
+              <p className="text-sm text-muted-foreground">Комментарий: {link.session_notes}</p>
             ) : null}
-            <p className="text-sm text-muted-foreground">
-              Карта нужна для соблюдения правила отмены. При поздней отмене сумма берется из
-              полной стоимости сессии.
-            </p>
+            <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground space-y-2">
+              <p>Зачем нужна карта:</p>
+              <p>1. Терапевт заранее фиксирует правило отмены для этой сессии.</p>
+              <p>2. При поздней отмене сумма берется из полной стоимости сессии.</p>
+              <p>3. После нажатия вы перейдете на защищенную страницу YooKassa.</p>
+            </div>
             <Button onClick={initAttachment} disabled={submitting}>
               {submitting ? "Переход..." : "Привязать карту"}
             </Button>
             {confirmationUrl && (
-              <a
-                href={confirmationUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-primary underline"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Перейти в YooKassa
-              </a>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                <p className="text-sm text-foreground">
+                  Страница YooKassa готова. Откройте ее, чтобы завершить привязку карты.
+                </p>
+                <a
+                  href={confirmationUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-primary underline"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Перейти в YooKassa
+                </a>
+              </div>
             )}
           </div>
         )}

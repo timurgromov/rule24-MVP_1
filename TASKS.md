@@ -138,6 +138,11 @@ Phase 8 architecture requirements:
 - [x] Mark public client link as completed only after successful attach-card webhook outcome
 - [x] Replace physical client delete with archive-safe behavior that preserves history
 
+### Post-phase UX polish — 2026-03-15
+- [x] Add clearer session-level scenario statuses for client link and penalty outcome
+- [x] Improve client payment page trust copy and next-step explanation
+- [x] Mark subscription/settings blocks as MVP preview where behavior is not fully automated yet
+
 ---
 
 ## Phase 10 — Subscription billing for Rule24
