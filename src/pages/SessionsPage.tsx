@@ -515,9 +515,19 @@ export default function SessionsPage() {
                 >
                   Скопировать ссылку
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => startSessionEdit(session)}
+                  disabled={session.status !== "scheduled"}
+                  className="h-9 w-full justify-center sm:hidden"
+                >
+                  <Edit2 className="h-3.5 w-3.5 mr-1" />
+                  Редактировать
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 w-full justify-center">
+                    <Button variant="outline" size="sm" className="hidden h-9 w-full justify-center sm:flex">
                       <MoreHorizontal className="h-3.5 w-3.5 mr-1" />
                       Еще
                     </Button>
