@@ -125,8 +125,8 @@ Phase 8 architecture requirements:
 - [x] Add public token-based client access
 - [x] Add client link lifecycle fields
 - [x] Create endpoint to generate client link
-- [ ] Create public client payment page
-- [ ] Connect card attachment flow through public link
+- [x] Create public client payment page
+- [x] Connect card attachment flow through public link
 - [ ] Persist link open/completion state
 
 ---

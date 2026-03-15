@@ -8,20 +8,14 @@ from db.session import get_db
 from models.client_payment_link import ClientPaymentLink, ClientPaymentLinkStatus
 from models.client import Client
 from models.session import Session as AppointmentSession
+from schemas.payment import CardAttachmentInitOut
 from schemas.client_payment_link import ClientPaymentLinkPublicOut
+from services.payment_service import create_card_attachment_payment
 
 router = APIRouter(prefix="/public/client-links", tags=["public-client-links"])
 
 
-@router.get(
-    "/{public_token}",
-    response_model=ClientPaymentLinkPublicOut,
-    summary="Get public client payment link context",
-)
-def get_public_client_link(
-    public_token: str,
-    db: Session = Depends(get_db),
-) -> ClientPaymentLinkPublicOut:
+def _get_link_or_410(db: Session, public_token: str) -> ClientPaymentLink:
     link = db.scalar(
         select(ClientPaymentLink).where(ClientPaymentLink.public_token == public_token)
     )
@@ -42,6 +36,19 @@ def get_public_client_link(
             status_code=status.HTTP_410_GONE,
             detail="Client link expired",
         )
+    return link
+
+
+@router.get(
+    "/{public_token}",
+    response_model=ClientPaymentLinkPublicOut,
+    summary="Get public client payment link context",
+)
+def get_public_client_link(
+    public_token: str,
+    db: Session = Depends(get_db),
+) -> ClientPaymentLinkPublicOut:
+    link = _get_link_or_410(db, public_token)
 
     session = db.get(AppointmentSession, link.session_id)
     client = db.get(Client, link.client_id)
@@ -66,4 +73,37 @@ def get_public_client_link(
         opened_at=link.opened_at,
         completed_at=link.completed_at,
         expired_at=link.expired_at,
+    )
+
+
+@router.post(
+    "/{public_token}/attach-card",
+    response_model=CardAttachmentInitOut,
+    summary="Initialize card attachment via public client link",
+)
+def init_attach_card_by_public_link(
+    public_token: str,
+    db: Session = Depends(get_db),
+) -> CardAttachmentInitOut:
+    link = _get_link_or_410(db, public_token)
+
+    session = db.get(AppointmentSession, link.session_id)
+    client = db.get(Client, link.client_id)
+    if session is None or client is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Client link context not found",
+        )
+
+    try:
+        payment = create_card_attachment_payment(db, session.user_id, client)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+
+    confirmation = payment.get("confirmation") or {}
+    return CardAttachmentInitOut(
+        payment_id=payment.get("id", ""),
+        confirmation_url=confirmation.get("confirmation_url"),
     )
