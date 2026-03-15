@@ -156,6 +156,7 @@ Phase 8 architecture requirements:
 - [x] Split Sessions UI into calendar status and payment-protection status (Защищена / Не защищена)
 - [x] Show link-copy action only for non-protected clients; keep protected clients marked as ready
 - [x] Restore explicit client consent step on Payment page before card-attachment redirect
+- [x] Restore demo-like Payment page visual tone while keeping required client consent checkboxes
 
 ---
 

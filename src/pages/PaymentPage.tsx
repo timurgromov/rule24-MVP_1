@@ -36,14 +36,6 @@ export default function PaymentPage() {
 
   const initAttachment = async () => {
     if (!token) return;
-    if (!ruleAccepted || !cardConsentAccepted) {
-      toast({
-        title: "Нужно подтверждение",
-        description: "Подтвердите правила отмены и согласие на привязку карты.",
-        variant: "destructive",
-      });
-      return;
-    }
     setSubmitting(true);
     try {
       const result = await api.initCardAttachmentByPublicLink(token);
@@ -97,9 +89,7 @@ export default function PaymentPage() {
               <p>1. Терапевт заранее фиксирует правило отмены для этой сессии.</p>
               <p>2. При поздней отмене сумма берется из полной стоимости сессии.</p>
               <p>3. После нажатия вы перейдете на защищенную страницу YooKassa.</p>
-            </div>
-            <div className="rounded-lg border bg-card p-3 space-y-3">
-              <div className="flex items-start gap-2">
+              <div className="mt-3 flex items-start gap-2">
                 <Checkbox
                   id="rule-accepted"
                   checked={ruleAccepted}
@@ -122,8 +112,8 @@ export default function PaymentPage() {
                 </label>
               </div>
             </div>
-            <Button onClick={initAttachment} disabled={submitting}>
-              {submitting ? "Переход..." : "Подтвердить и привязать карту"}
+            <Button onClick={initAttachment} disabled={submitting || !ruleAccepted || !cardConsentAccepted}>
+              {submitting ? "Переход..." : "Привязать карту"}
             </Button>
             {confirmationUrl && (
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
