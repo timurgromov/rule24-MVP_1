@@ -4,6 +4,7 @@ import { ExternalLink, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { api, ApiError, PublicClientLinkDto } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
@@ -14,6 +15,8 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [confirmationUrl, setConfirmationUrl] = useState<string | null>(null);
+  const [ruleAccepted, setRuleAccepted] = useState(false);
+  const [cardConsentAccepted, setCardConsentAccepted] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -33,6 +36,14 @@ export default function PaymentPage() {
 
   const initAttachment = async () => {
     if (!token) return;
+    if (!ruleAccepted || !cardConsentAccepted) {
+      toast({
+        title: "Нужно подтверждение",
+        description: "Подтвердите правила отмены и согласие на привязку карты.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       const result = await api.initCardAttachmentByPublicLink(token);
@@ -87,8 +98,32 @@ export default function PaymentPage() {
               <p>2. При поздней отмене сумма берется из полной стоимости сессии.</p>
               <p>3. После нажатия вы перейдете на защищенную страницу YooKassa.</p>
             </div>
+            <div className="rounded-lg border bg-card p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="rule-accepted"
+                  checked={ruleAccepted}
+                  onCheckedChange={(value) => setRuleAccepted(Boolean(value))}
+                  className="mt-0.5"
+                />
+                <label htmlFor="rule-accepted" className="text-sm text-foreground cursor-pointer">
+                  Я ознакомлен(а) с правилом поздней отмены и условиями списания.
+                </label>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="card-consent"
+                  checked={cardConsentAccepted}
+                  onCheckedChange={(value) => setCardConsentAccepted(Boolean(value))}
+                  className="mt-0.5"
+                />
+                <label htmlFor="card-consent" className="text-sm text-foreground cursor-pointer">
+                  Я согласен(на) привязать карту для оплаты этой сессии при нарушении правила отмены.
+                </label>
+              </div>
+            </div>
             <Button onClick={initAttachment} disabled={submitting}>
-              {submitting ? "Переход..." : "Привязать карту"}
+              {submitting ? "Переход..." : "Подтвердить и привязать карту"}
             </Button>
             {confirmationUrl && (
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
