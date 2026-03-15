@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api, ApiError, ClientDto } from "@/lib/api";
@@ -130,6 +131,24 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      <div className="rounded-xl border bg-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-foreground">Как работать со списком клиентов</p>
+              <Badge variant="outline">Безопасно для истории</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Архивируйте клиента, если он больше не активен. Его прошлые сессии, ссылки и платежная
+              история останутся в системе.
+            </p>
+          </div>
+          <Button type="button" variant="outline" onClick={startCreate}>
+            Новый клиент
+          </Button>
+        </div>
+      </div>
+
       <form className="rounded-xl border bg-card p-4 grid gap-3 sm:grid-cols-2" onSubmit={submitForm}>
         <Input
           placeholder="Имя"
@@ -197,7 +216,12 @@ export default function ClientsPage() {
           </div>
         ))}
         {!loading && filteredClients.length === 0 && (
-          <p className="p-6 text-sm text-muted-foreground text-center">Клиенты не найдены</p>
+          <div className="p-6 text-center space-y-1">
+            <p className="text-sm text-muted-foreground">Клиенты не найдены</p>
+            <p className="text-xs text-muted-foreground">
+              Создайте первого клиента или измените поисковый запрос.
+            </p>
+          </div>
         )}
       </div>
       <p className="text-xs text-muted-foreground">

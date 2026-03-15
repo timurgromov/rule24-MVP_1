@@ -142,6 +142,8 @@ Phase 8 architecture requirements:
 - [x] Add clearer session-level scenario statuses for client link and penalty outcome
 - [x] Improve client payment page trust copy and next-step explanation
 - [x] Mark subscription/settings blocks as MVP preview where behavior is not fully automated yet
+- [x] Improve dashboard action clarity and empty-state guidance
+- [x] Improve clients page guidance around archive-safe workflow
 
 ---
 
