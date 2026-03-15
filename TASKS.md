@@ -146,6 +146,8 @@ Phase 8 architecture requirements:
 - [x] Improve clients page guidance around archive-safe workflow
 - [x] Simplify Sessions table by removing low-signal columns and secondary visual noise
 - [x] Auto-generate client link on session creation and make copy action primary
+- [x] Remove redundant link/penalty badges for scheduled sessions and fix Sessions actions layout clipping
+- [x] Fix Sessions inline date/time edit layout to prevent input overflow in table row
 
 ---
 

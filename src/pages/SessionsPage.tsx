@@ -2,7 +2,6 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Edit2, ExternalLink, MoreHorizontal, Save, Search, X, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -89,20 +88,12 @@ function outcomeLabel(outcomeType: SessionDto["outcome_type"]) {
   return null;
 }
 
-function linkStatusMeta(status: ClientPaymentLinkDto["status"] | null) {
-  if (status === "completed") return { label: "Карта привязана", variant: "success" as const };
-  if (status === "opened") return { label: "Ссылка открыта", variant: "warning" as const };
-  if (status === "created") return { label: "Ссылка создана", variant: "secondary" as const };
-  if (status === "expired") return { label: "Ссылка истекла", variant: "danger" as const };
-  return { label: "Ссылка не создана", variant: "muted" as const };
-}
-
-function transactionStatusMeta(status: TransactionDto["status"] | null) {
-  if (status === "paid") return { label: "Штраф оплачен", variant: "success" as const };
-  if (status === "pending") return { label: "Штраф в обработке", variant: "warning" as const };
-  if (status === "failed") return { label: "Штраф не прошел", variant: "danger" as const };
-  if (status === "refunded") return { label: "Штраф возвращен", variant: "secondary" as const };
-  return { label: "Штрафа нет", variant: "muted" as const };
+function transactionStatusText(status: TransactionDto["status"] | null): string | null {
+  if (status === "paid") return "Штраф: оплачен";
+  if (status === "pending") return "Штраф: в обработке";
+  if (status === "failed") return "Штраф: не прошел";
+  if (status === "refunded") return "Штраф: возвращен";
+  return null;
 }
 
 function notifyAttentionUpdated() {
@@ -110,7 +101,7 @@ function notifyAttentionUpdated() {
 }
 
 export default function SessionsPage() {
-  const tableGridClass = "md:grid-cols-[1.3fr_1.2fr_0.9fr_1.4fr_1fr]";
+  const tableGridClass = "md:grid-cols-[1.35fr_1.05fr_0.8fr_1fr_1.55fr]";
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [transactions, setTransactions] = useState<TransactionDto[]>([]);
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -502,7 +493,7 @@ export default function SessionsPage() {
                 </div>
                 <div className="min-w-0">
                   {canFullyEdit ? (
-                    <div className="flex min-w-0 items-center gap-2">
+                    <div className="grid min-w-0 grid-cols-1 gap-2">
                       <Input
                         type="date"
                         value={editForm.start_date}
@@ -511,7 +502,7 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_date: event.target.value } : prev,
                           )
                         }
-                        className="h-9 min-w-0 flex-1 pr-9"
+                        className="h-9 min-w-0 pr-9"
                       />
                       <Input
                         type="time"
@@ -521,7 +512,7 @@ export default function SessionsPage() {
                             prev ? { ...prev, start_time: event.target.value } : prev,
                           )
                         }
-                        className="h-9 w-[86px] flex-none pr-8"
+                        className="h-9 min-w-0 pr-8"
                       />
                     </div>
                   ) : (
@@ -582,10 +573,8 @@ export default function SessionsPage() {
           return (
             <div key={session.id} className={`grid ${tableGridClass} items-center gap-3 p-4 border-b last:border-b-0 text-sm`}>
               {(() => {
-                const link = linksBySessionId[session.id] ?? null;
                 const transaction = latestTransactionBySessionId.get(session.id) ?? null;
-                const linkMeta = linkStatusMeta(link?.status ?? null);
-                const transactionMeta = transactionStatusMeta(transaction?.status ?? null);
+                const transactionText = transactionStatusText(transaction?.status ?? null);
                 return (
                   <>
               <span className="block min-w-0 truncate font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
@@ -593,10 +582,7 @@ export default function SessionsPage() {
               <span className="block min-w-0 whitespace-nowrap">{formatMoneyCompact(session.price)}</span>
               <div className="min-w-0">
                 <span className="block truncate whitespace-nowrap">{statusLabel(session.status)}</span>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  <Badge variant={linkMeta.variant}>{linkMeta.label}</Badge>
-                  <Badge variant={transactionMeta.variant}>{transactionMeta.label}</Badge>
-                </div>
+                {transactionText && <span className="mt-1 block text-xs text-muted-foreground">{transactionText}</span>}
                 {session.outcome_confirmed && outcomeLabel(session.outcome_type) && (
                   <span className="mt-1 block text-xs text-muted-foreground">
                     Итог: {outcomeLabel(session.outcome_type)}
@@ -606,18 +592,19 @@ export default function SessionsPage() {
                   <span className="mt-1 block text-xs text-amber-700">Итог не подтвержден</span>
                 )}
               </div>
-              <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex min-w-[200px] flex-col gap-2">
                 <Button
                   size="sm"
                   onClick={() => void copyClientLink(session.id)}
                   disabled={linkActionSessionId === session.id}
+                  className="h-9 w-full justify-center whitespace-nowrap"
                 >
-                  <Copy className="h-3.5 w-3.5 mr-1" />
-                  Скопировать ссылку
+                  <Copy className="mr-1 h-3.5 w-3.5 shrink-0" />
+                  Скопировать
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="h-9 w-full justify-center">
                       <MoreHorizontal className="h-3.5 w-3.5 mr-1" />
                       Еще
                     </Button>
