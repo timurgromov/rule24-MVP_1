@@ -218,8 +218,6 @@ export default function SessionsPage() {
     }
   };
 
-  const toClientLinkUrl = (token: string) => `${window.location.origin}/pay/${token}`;
-
   const createClientLink = async (sessionId: number): Promise<ClientPaymentLinkDto | null> => {
     setLinkActionSessionId(sessionId);
     try {
@@ -258,14 +256,14 @@ export default function SessionsPage() {
   const copyClientLink = async (sessionId: number) => {
     const link = linksBySessionId[sessionId] ?? (await getLatestClientLink(sessionId));
     if (!link) return;
-    await navigator.clipboard.writeText(toClientLinkUrl(link.public_token));
+    await navigator.clipboard.writeText(link.client_url);
     toast({ title: "Ссылка скопирована" });
   };
 
   const openClientLink = async (sessionId: number) => {
     const link = linksBySessionId[sessionId] ?? (await getLatestClientLink(sessionId));
     if (!link) return;
-    window.open(`/pay/${link.public_token}`, "_blank", "noopener,noreferrer");
+    window.open(link.client_url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -555,7 +553,7 @@ export default function SessionsPage() {
                     disabled={linkActionSessionId === session.id}
                   >
                     <Link2 className="h-3.5 w-3.5 mr-1" />
-                    Сгенерировать
+                    Сгенерировать ссылку
                   </Button>
                   <Button
                     variant="outline"
@@ -564,7 +562,7 @@ export default function SessionsPage() {
                     disabled={linkActionSessionId === session.id}
                   >
                     <Copy className="h-3.5 w-3.5 mr-1" />
-                    Скопировать
+                    Скопировать клиенту
                   </Button>
                   <Button
                     variant="outline"
@@ -573,13 +571,18 @@ export default function SessionsPage() {
                     disabled={linkActionSessionId === session.id}
                   >
                     <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                    Открыть
+                    Предпросмотр
                   </Button>
                 </div>
                 {linksBySessionId[session.id] && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    /pay/{linksBySessionId[session.id].public_token}
-                  </span>
+                  <div className="space-y-1">
+                    <span className="block text-xs text-muted-foreground">
+                      Эту ссылку нужно отправить клиенту:
+                    </span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {linksBySessionId[session.id].client_url}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

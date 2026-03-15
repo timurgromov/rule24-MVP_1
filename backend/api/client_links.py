@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.deps import get_current_user
+from core.config import get_settings
 from db.session import get_db
 from models.client_payment_link import ClientPaymentLink, ClientPaymentLinkStatus
 from models.session import Session as AppointmentSession
@@ -12,6 +13,7 @@ from models.user import User
 from schemas.client_payment_link import ClientPaymentLinkOut
 
 router = APIRouter(prefix="/client-links", tags=["client-links"])
+settings = get_settings()
 
 
 def _get_owned_session_or_404(db: Session, user_id: int, session_id: int) -> AppointmentSession:
@@ -39,6 +41,11 @@ def _generate_public_token(db: Session) -> str:
             return token
 
 
+def _build_client_url(public_token: str) -> tuple[str, str]:
+    client_url_path = f"/pay/{public_token}"
+    return client_url_path, f"{settings.app_public_url.rstrip('/')}{client_url_path}"
+
+
 @router.post(
     "/sessions/{session_id}",
     response_model=ClientPaymentLinkOut,
@@ -61,6 +68,7 @@ def create_client_payment_link(
     db.add(link)
     db.commit()
     db.refresh(link)
+    client_url_path, client_url = _build_client_url(link.public_token)
 
     return ClientPaymentLinkOut(
         id=link.id,
@@ -68,7 +76,8 @@ def create_client_payment_link(
         client_id=link.client_id,
         public_token=link.public_token,
         status=link.status,
-        client_url_path=f"/pay/{link.public_token}",
+        client_url_path=client_url_path,
+        client_url=client_url,
         created_at=link.created_at,
         opened_at=link.opened_at,
         completed_at=link.completed_at,
@@ -98,6 +107,7 @@ def get_latest_client_payment_link(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Client link not found",
         )
+    client_url_path, client_url = _build_client_url(link.public_token)
 
     return ClientPaymentLinkOut(
         id=link.id,
@@ -105,7 +115,8 @@ def get_latest_client_payment_link(
         client_id=link.client_id,
         public_token=link.public_token,
         status=link.status,
-        client_url_path=f"/pay/{link.public_token}",
+        client_url_path=client_url_path,
+        client_url=client_url,
         created_at=link.created_at,
         opened_at=link.opened_at,
         completed_at=link.completed_at,

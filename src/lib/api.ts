@@ -107,6 +107,7 @@ export type ClientPaymentLinkDto = {
   public_token: string;
   status: "created" | "opened" | "completed" | "expired";
   client_url_path: string;
+  client_url: string;
   created_at: string;
   opened_at: string | null;
   completed_at: string | null;

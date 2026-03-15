@@ -48,15 +48,6 @@ def _mark_opened_if_needed(db: Session, link: ClientPaymentLink) -> ClientPaymen
     return link
 
 
-def _mark_completed_if_needed(db: Session, link: ClientPaymentLink) -> ClientPaymentLink:
-    if link.completed_at is None and link.status != ClientPaymentLinkStatus.expired:
-        link.completed_at = datetime.now(timezone.utc)
-        link.status = ClientPaymentLinkStatus.completed
-        db.commit()
-        db.refresh(link)
-    return link
-
-
 @router.get(
     "/{public_token}",
     response_model=ClientPaymentLinkPublicOut,
@@ -122,7 +113,6 @@ def init_attach_card_by_public_link(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
 
     link = _mark_opened_if_needed(db, link)
-    link = _mark_completed_if_needed(db, link)
 
     confirmation = payment.get("confirmation") or {}
     return CardAttachmentInitOut(

@@ -35,7 +35,7 @@ const App = () => (
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
-        <Route path="/pay/:sessionId" element={<PaymentPage />} />
+        <Route path="/pay/:publicToken" element={<PaymentPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

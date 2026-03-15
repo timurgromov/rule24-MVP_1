@@ -12,6 +12,7 @@ class ClientPaymentLinkOut(BaseModel):
     public_token: str
     status: ClientPaymentLinkStatus
     client_url_path: str
+    client_url: str
     created_at: datetime
     opened_at: datetime | None = None
     completed_at: datetime | None = None

@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "Rule24 API"
     app_env: str = "development"
     api_prefix: str = "/api"
+    app_public_url: str = "http://127.0.0.1:8080"
     database_url: str = "postgresql+psycopg://rule24:rule24@localhost:5432/rule24"
     jwt_secret_key: str = "change_me_for_production"
     jwt_algorithm: str = "HS256"

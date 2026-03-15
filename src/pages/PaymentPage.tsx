@@ -7,34 +7,34 @@ import { api, ApiError, PublicClientLinkDto } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
 export default function PaymentPage() {
-  const { sessionId } = useParams();
-  const publicToken = sessionId ?? "";
+  const { publicToken } = useParams();
+  const token = publicToken ?? "";
   const [link, setLink] = useState<PublicClientLinkDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [confirmationUrl, setConfirmationUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!publicToken) {
+    if (!token) {
       setLoading(false);
       return;
     }
     setLoading(true);
     api
-      .getPublicClientLink(publicToken)
+      .getPublicClientLink(token)
       .then(setLink)
       .catch((err) => {
         const message = err instanceof ApiError ? err.detail : "Не удалось загрузить клиентскую ссылку";
         toast({ title: "Ошибка", description: message, variant: "destructive" });
       })
       .finally(() => setLoading(false));
-  }, [publicToken]);
+  }, [token]);
 
   const initAttachment = async () => {
-    if (!publicToken) return;
+    if (!token) return;
     setSubmitting(true);
     try {
-      const result = await api.initCardAttachmentByPublicLink(publicToken);
+      const result = await api.initCardAttachmentByPublicLink(token);
       setConfirmationUrl(result.confirmation_url);
       toast({ title: "Платеж создан", description: `payment_id: ${result.payment_id}` });
     } catch (err) {
@@ -54,7 +54,8 @@ export default function PaymentPage() {
             <h1 className="font-semibold">Страница клиента Rule24</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            Полный real YooKassa flow требует реальные credentials и публичный webhook URL.
+            Это безопасная страница Rule24 для привязки карты к вашей сессии. После нажатия
+            вы перейдете в защищенный YooKassa flow.
           </p>
         </div>
 
@@ -75,10 +76,11 @@ export default function PaymentPage() {
               <p className="text-sm text-muted-foreground">Notes: {link.session_notes}</p>
             ) : null}
             <p className="text-sm text-muted-foreground">
-              Late cancellation charge source = full session.price.
+              Карта нужна для соблюдения правила отмены. При поздней отмене сумма берется из
+              полной стоимости сессии.
             </p>
             <Button onClick={initAttachment} disabled={submitting}>
-              {submitting ? "Инициализация..." : "Инициализировать привязку карты"}
+              {submitting ? "Переход..." : "Привязать карту"}
             </Button>
             {confirmationUrl && (
               <a
@@ -88,7 +90,7 @@ export default function PaymentPage() {
                 className="inline-flex items-center gap-1 text-primary underline"
               >
                 <ExternalLink className="h-4 w-4" />
-                Открыть confirmation_url
+                Перейти в YooKassa
               </a>
             )}
           </div>
