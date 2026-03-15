@@ -130,6 +130,13 @@ Phase 8 architecture requirements:
 - [x] Persist link open/completion state
 - [x] Add therapist UI controls to generate/copy/open client links
 
+### Post-phase stabilization — 2026-03-15
+- [x] Return full client payment URL for therapist copy/share flow
+- [x] Clarify Sessions page actions for generate/copy/preview of client link
+- [x] Start late-cancellation penalty flow directly from session cancel endpoint
+- [x] Return actual penalty transaction/error state in cancel response for UI feedback
+- [x] Mark public client link as completed only after successful attach-card webhook outcome
+
 ---
 
 ## Phase 10 — Subscription billing for Rule24

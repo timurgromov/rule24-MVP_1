@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from models.client import Client
+from models.client_payment_link import ClientPaymentLink, ClientPaymentLinkStatus
 from models.payment_method import PaymentMethod
 from models.session import Session
 from models.transaction import Transaction, TransactionStatus
@@ -33,8 +34,16 @@ def create_card_attachment_payment(
     db: Session,
     user_id: int,
     client: Client,
+    metadata: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     yookassa = YooKassaService()
+    payment_metadata = {
+        "purpose": "attach_payment_method",
+        "user_id": str(user_id),
+        "client_id": str(client.id),
+    }
+    if metadata:
+        payment_metadata.update(metadata)
 
     payload = {
         "amount": {"value": "1.00", "currency": "RUB"},
@@ -45,11 +54,7 @@ def create_card_attachment_payment(
         },
         "save_payment_method": True,
         "description": "Rule24 card attachment",
-        "metadata": {
-            "purpose": "attach_payment_method",
-            "user_id": str(user_id),
-            "client_id": str(client.id),
-        },
+        "metadata": payment_metadata,
     }
 
     idempotence_key = f"client_{client.id}_attach_card"
@@ -176,6 +181,30 @@ def _save_payment_method_reference(db: Session, payment_object: dict[str, Any]) 
     db.add(new_method)
 
 
+def _mark_client_payment_link_completed(db: Session, payment_object: dict[str, Any]) -> None:
+    metadata = payment_object.get("metadata") or {}
+    if metadata.get("purpose") != "attach_payment_method":
+        return
+
+    link_id = metadata.get("client_payment_link_id")
+    if not link_id:
+        return
+
+    link = db.get(ClientPaymentLink, int(link_id))
+    if link is None:
+        return
+
+    public_token = metadata.get("client_payment_link_token")
+    if public_token and link.public_token != public_token:
+        return
+
+    if link.status == ClientPaymentLinkStatus.expired or link.completed_at is not None:
+        return
+
+    link.completed_at = datetime.now(timezone.utc)
+    link.status = ClientPaymentLinkStatus.completed
+
+
 def _update_transaction_status(
     db: Session,
     payment_id: str,
@@ -217,6 +246,7 @@ def process_yookassa_webhook(db: Session, payload: dict[str, Any]) -> dict[str, 
 
     if event_type == "payment.succeeded":
         _save_payment_method_reference(db, payment_object)
+        _mark_client_payment_link_completed(db, payment_object)
         if payment_id != "unknown":
             _update_transaction_status(db, payment_id, TransactionStatus.paid)
     elif event_type in {"payment.canceled", "payment.failed"}:

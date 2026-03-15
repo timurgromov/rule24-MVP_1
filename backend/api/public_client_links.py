@@ -106,7 +106,15 @@ def init_attach_card_by_public_link(
         )
 
     try:
-        payment = create_card_attachment_payment(db, session.user_id, client)
+        payment = create_card_attachment_payment(
+            db,
+            session.user_id,
+            client,
+            metadata={
+                "client_payment_link_id": str(link.id),
+                "client_payment_link_token": link.public_token,
+            },
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except RuntimeError as exc:
