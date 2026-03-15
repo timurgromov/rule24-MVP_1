@@ -1,6 +1,6 @@
 from schemas.auth import LoginRequest, RegisterRequest, TokenResponse
 from schemas.cancellation_rule import CancellationRuleOut, CancellationRuleUpdate
-from schemas.client_payment_link import ClientPaymentLinkOut
+from schemas.client_payment_link import ClientPaymentLinkOut, ClientPaymentLinkPublicOut
 from schemas.client import ClientCreateRequest, ClientOut, ClientUpdateRequest
 from schemas.payment import CardAttachmentInitOut, PenaltyChargeOut
 from schemas.session import (
@@ -21,6 +21,7 @@ __all__ = [
     "CancellationRuleOut",
     "CancellationRuleUpdate",
     "ClientPaymentLinkOut",
+    "ClientPaymentLinkPublicOut",
     "LoginRequest",
     "PenaltyChargeOut",
     "RegisterRequest",

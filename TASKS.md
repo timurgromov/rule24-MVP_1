@@ -122,7 +122,7 @@ Phase 8 architecture requirements:
 
 ## Phase 9.1 — Client payment link architecture
 - [x] Design client link entity
-- [ ] Add public token-based client access
+- [x] Add public token-based client access
 - [x] Add client link lifecycle fields
 - [x] Create endpoint to generate client link
 - [ ] Create public client payment page
