@@ -18,6 +18,7 @@ from schemas.session import (
     SessionUpdate,
 )
 from services.cancellation_rule_service import get_or_create_cancellation_rule
+from services.payment_service import create_penalty_charge
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 
@@ -220,10 +221,18 @@ def cancel_session(
     rule = get_or_create_cancellation_rule(db, current_user.id)
     hours_before_start = _hours_before_start(current_session.start_time)
     is_late_cancellation = hours_before_start < rule.hours_before
+    penalty_transaction = None
+    penalty_error = None
 
     current_session.status = SessionStatus.cancelled
     db.commit()
     db.refresh(current_session)
+
+    if is_late_cancellation:
+        try:
+            penalty_transaction = create_penalty_charge(db, current_user.id, current_session)
+        except (ValueError, RuntimeError) as exc:
+            penalty_error = str(exc)
 
     return SessionCancelOut(
         session=SessionOut.model_validate(current_session),
@@ -231,4 +240,8 @@ def cancel_session(
         hours_before_start=round(hours_before_start, 2),
         is_late_cancellation=is_late_cancellation,
         charge_amount=current_session.price if is_late_cancellation else None,
+        penalty_transaction=(
+            None if penalty_transaction is None else penalty_transaction
+        ),
+        penalty_error=penalty_error,
     )

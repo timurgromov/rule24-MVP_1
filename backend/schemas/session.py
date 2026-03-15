@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from schemas.transaction import TransactionOut
+
 SessionStatusValue = Literal["scheduled", "completed", "cancelled"]
 SessionOutcomeValue = Literal["completed", "late_cancellation", "no_show"]
 
@@ -70,6 +72,11 @@ class SessionCancelOut(BaseModel):
     charge_amount: Decimal | None = Field(
         description="Late cancellation charge amount. Equals full session price when applicable.",
         json_schema_extra={"example": "3000.00"},
+    )
+    penalty_transaction: TransactionOut | None = None
+    penalty_error: str | None = Field(
+        default=None,
+        description="Controlled error when late-cancellation penalty could not be started.",
     )
 
 

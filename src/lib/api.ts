@@ -67,6 +67,8 @@ export type SessionCancelResponse = {
   hours_before_start: number;
   is_late_cancellation: boolean;
   charge_amount: string | null;
+  penalty_transaction: TransactionDto | null;
+  penalty_error: string | null;
 };
 
 export type CancellationRuleDto = {

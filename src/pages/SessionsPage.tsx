@@ -204,11 +204,24 @@ export default function SessionsPage() {
   const cancelSession = async (sessionId: number) => {
     try {
       const result = await api.cancelSession(sessionId);
+      let description = "Штраф не применён.";
+
+      if (result.is_late_cancellation) {
+        if (result.penalty_transaction) {
+          description =
+            result.penalty_transaction.status === "paid"
+              ? `Поздняя отмена: списание прошло на ${result.charge_amount ?? "0.00"} RUB.`
+              : `Поздняя отмена: создана транзакция на ${result.charge_amount ?? "0.00"} RUB, статус ${result.penalty_transaction.status}.`;
+        } else if (result.penalty_error) {
+          description = `Поздняя отмена: штраф ${result.charge_amount ?? "0.00"} RUB не запущен. ${result.penalty_error}`;
+        } else {
+          description = `Поздняя отмена: штраф ${result.charge_amount ?? "0.00"} RUB должен быть применён.`;
+        }
+      }
+
       toast({
         title: "Сессия отменена",
-        description: result.is_late_cancellation
-          ? `Штраф будет применён: ${result.charge_amount ?? "0.00"} RUB`
-          : "Штраф не применён.",
+        description,
       });
       await loadAll();
       notifyAttentionUpdated();
