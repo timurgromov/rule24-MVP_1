@@ -7,10 +7,38 @@ from sqlalchemy.orm import Session
 from api.deps import get_current_user
 from db.session import get_db
 from models.client import Client
+from models.payment_method import PaymentMethod
 from models.user import User
 from schemas.client import ClientCreateRequest, ClientOut, ClientUpdateRequest
 
 router = APIRouter(prefix="/clients", tags=["clients"])
+
+
+def _get_latest_payment_method(db: Session, client_id: int) -> PaymentMethod | None:
+    return db.scalar(
+        select(PaymentMethod)
+        .where(PaymentMethod.client_id == client_id)
+        .order_by(PaymentMethod.created_at.desc())
+    )
+
+
+def _to_client_out(db: Session, client: Client) -> ClientOut:
+    latest_method = _get_latest_payment_method(db, client.id)
+    return ClientOut(
+        id=client.id,
+        user_id=client.user_id,
+        name=client.name,
+        email=client.email,
+        phone=client.phone,
+        notes=client.notes,
+        has_saved_payment_method=latest_method is not None,
+        card_last4=None if latest_method is None else latest_method.card_last4,
+        card_brand=None if latest_method is None else latest_method.card_brand,
+        payment_method_bound_at=None if latest_method is None else latest_method.created_at,
+        archived_at=client.archived_at,
+        created_at=client.created_at,
+        updated_at=client.updated_at,
+    )
 
 
 def _get_owned_client_or_404(
@@ -49,7 +77,7 @@ def create_client(
     db.add(client)
     db.commit()
     db.refresh(client)
-    return ClientOut.model_validate(client)
+    return _to_client_out(db, client)
 
 
 @router.get("", response_model=list[ClientOut])
@@ -62,7 +90,7 @@ def list_clients(
     if not include_archived:
         query = query.where(Client.archived_at.is_(None))
     clients = db.scalars(query.order_by(Client.created_at.desc())).all()
-    return [ClientOut.model_validate(client) for client in clients]
+    return [_to_client_out(db, client) for client in clients]
 
 
 @router.put("/{client_id}", response_model=ClientOut)
@@ -82,7 +110,7 @@ def update_client(
 
     db.commit()
     db.refresh(client)
-    return ClientOut.model_validate(client)
+    return _to_client_out(db, client)
 
 
 @router.delete("/{client_id}", status_code=status.HTTP_204_NO_CONTENT)

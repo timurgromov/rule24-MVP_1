@@ -39,6 +39,10 @@ export type ClientDto = {
   email: string | null;
   phone: string | null;
   notes: string | null;
+  has_saved_payment_method: boolean;
+  card_last4: string | null;
+  card_brand: string | null;
+  payment_method_bound_at: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;

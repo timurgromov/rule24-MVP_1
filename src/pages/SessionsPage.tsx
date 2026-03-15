@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Copy, Edit2, ExternalLink, MoreHorizontal, Save, Search, X, XCircle } from "lucide-react";
+import { CalendarClock, Edit2, ExternalLink, MoreHorizontal, Save, Search, X, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +96,13 @@ function transactionStatusText(status: TransactionDto["status"] | null): string 
   return null;
 }
 
+function formatCardStatus(client: ClientDto | undefined): string {
+  if (!client?.has_saved_payment_method) return "Карта клиента: не привязана";
+  const brand = (client.card_brand ?? "Карта").toUpperCase();
+  const last4 = client.card_last4 ? ` ****${client.card_last4}` : "";
+  return `Карта клиента: привязана (${brand}${last4})`;
+}
+
 function notifyAttentionUpdated() {
   window.dispatchEvent(new Event("rule24-attention-updated"));
 }
@@ -168,6 +175,10 @@ export default function SessionsPage() {
 
   const clientMap = useMemo(
     () => new Map(clients.map((client) => [client.id, client.name])),
+    [clients],
+  );
+  const clientById = useMemo(
+    () => new Map(clients.map((client) => [client.id, client])),
     [clients],
   );
   const activeClients = useMemo(
@@ -251,10 +262,6 @@ export default function SessionsPage() {
           price: Number(editForm.price).toFixed(2),
         });
       } else {
-        toast({
-          title: "Редактирование ограничено",
-          description: "Для завершенных или отмененных сессий можно менять только комментарии.",
-        });
         return;
       }
       toast({ title: "Сессия обновлена" });
@@ -575,6 +582,7 @@ export default function SessionsPage() {
               {(() => {
                 const transaction = latestTransactionBySessionId.get(session.id) ?? null;
                 const transactionText = transactionStatusText(transaction?.status ?? null);
+                const client = clientById.get(session.client_id);
                 return (
                   <>
               <span className="block min-w-0 truncate font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
@@ -582,7 +590,10 @@ export default function SessionsPage() {
               <span className="block min-w-0 whitespace-nowrap">{formatMoneyCompact(session.price)}</span>
               <div className="min-w-0">
                 <span className="block truncate whitespace-nowrap">{statusLabel(session.status)}</span>
-                {transactionText && <span className="mt-1 block text-xs text-muted-foreground">{transactionText}</span>}
+                <span className="mt-1 block text-xs text-muted-foreground">{formatCardStatus(client)}</span>
+                {session.status === "cancelled" && transactionText && (
+                  <span className="mt-1 block text-xs text-muted-foreground">{transactionText}</span>
+                )}
                 {session.outcome_confirmed && outcomeLabel(session.outcome_type) && (
                   <span className="mt-1 block text-xs text-muted-foreground">
                     Итог: {outcomeLabel(session.outcome_type)}
@@ -599,8 +610,7 @@ export default function SessionsPage() {
                   disabled={linkActionSessionId === session.id}
                   className="h-9 w-full justify-center whitespace-nowrap"
                 >
-                  <Copy className="mr-1 h-3.5 w-3.5 shrink-0" />
-                  Скопировать
+                  Скопировать ссылку
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -631,11 +641,6 @@ export default function SessionsPage() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                {!transaction && session.status === "cancelled" && (
-                  <span className="text-xs text-muted-foreground">
-                    Если штраф не появился, проверьте: есть ли у клиента привязанная карта и настроена ли YooKassa.
-                  </span>
-                )}
               </div>
                   </>
                 );

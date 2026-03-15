@@ -24,6 +24,10 @@ class ClientOut(BaseModel):
     email: EmailStr | None
     phone: str | None
     notes: str | None
+    has_saved_payment_method: bool = False
+    card_last4: str | None = None
+    card_brand: str | None = None
+    payment_method_bound_at: datetime | None = None
     archived_at: datetime | None
     created_at: datetime
     updated_at: datetime

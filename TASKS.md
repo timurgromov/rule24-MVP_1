@@ -148,6 +148,8 @@ Phase 8 architecture requirements:
 - [x] Auto-generate client link on session creation and make copy action primary
 - [x] Remove redundant link/penalty badges for scheduled sessions and fix Sessions actions layout clipping
 - [x] Fix Sessions inline date/time edit layout to prevent input overflow in table row
+- [x] Replace noisy penalty guidance text with direct card-bound status in Sessions table
+- [x] Expose client card-binding state from backend for clear operator visibility
 
 ---
 
