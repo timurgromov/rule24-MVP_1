@@ -151,6 +151,7 @@ Phase 8 architecture requirements:
 - [x] Replace noisy penalty guidance text with direct card-bound status in Sessions table
 - [x] Expose client card-binding state from backend for clear operator visibility
 - [x] Show card-binding status directly in Clients list instead of low-signal notes column
+- [x] Move session editing from inline row mode to modal dialog for cleaner table layout
 
 ---
 

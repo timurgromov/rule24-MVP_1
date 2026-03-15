@@ -4,6 +4,14 @@ import { CalendarClock, Edit2, ExternalLink, MoreHorizontal, Save, Search, X, XC
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -115,7 +123,7 @@ export default function SessionsPage() {
   const [createForm, setCreateForm] = useState<SessionForm>(emptySessionForm);
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingSession, setEditingSession] = useState<SessionDto | null>(null);
   const [editForm, setEditForm] = useState<SessionForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -234,8 +242,8 @@ export default function SessionsPage() {
     }
   };
 
-  const startInlineEdit = (session: SessionDto) => {
-    setEditingId(session.id);
+  const startSessionEdit = (session: SessionDto) => {
+    setEditingSession(session);
     setEditForm({
       client_id: String(session.client_id),
       start_date: toLocalDateInput(session.start_time),
@@ -245,27 +253,31 @@ export default function SessionsPage() {
     });
   };
 
-  const cancelInlineEdit = () => {
-    setEditingId(null);
+  const closeSessionEdit = () => {
+    setEditingSession(null);
     setEditForm(null);
   };
 
-  const saveInlineEdit = async (session: SessionDto) => {
-    if (!editForm) return;
+  const saveSessionEdit = async () => {
+    if (!editForm || !editingSession) return;
     setSavingEdit(true);
     try {
-      if (session.status === "scheduled") {
-        await api.updateSession(session.id, {
-          client_id: Number(editForm.client_id),
-          start_time: toDatetimeIso(editForm.start_date, editForm.start_time),
-          duration_minutes: Number(editForm.duration_minutes),
-          price: Number(editForm.price).toFixed(2),
+      if (editingSession.status !== "scheduled") {
+        toast({
+          title: "Редактирование недоступно",
+          description: "Можно редактировать только запланированные сессии.",
+          variant: "destructive",
         });
-      } else {
         return;
       }
+      await api.updateSession(editingSession.id, {
+        client_id: Number(editForm.client_id),
+        start_time: toDatetimeIso(editForm.start_date, editForm.start_time),
+        duration_minutes: Number(editForm.duration_minutes),
+        price: Number(editForm.price).toFixed(2),
+      });
       toast({ title: "Сессия обновлена" });
-      cancelInlineEdit();
+      closeSessionEdit();
       await loadAll();
       notifyAttentionUpdated();
     } catch (err) {
@@ -468,115 +480,6 @@ export default function SessionsPage() {
             <span>Действия</span>
           </div>
           {filteredSessions.map((session) => {
-          const isEditing = editingId === session.id && editForm !== null;
-          const canFullyEdit = session.status === "scheduled";
-
-          if (isEditing && editForm) {
-            return (
-              <div
-                key={session.id}
-                className={`grid ${tableGridClass} items-center gap-3 p-4 border-b last:border-b-0 text-sm bg-muted/30`}
-              >
-                <div className="min-w-0">
-                  {canFullyEdit ? (
-                    <ClientCombobox
-                      clients={activeClients}
-                      value={editForm.client_id}
-                      onChange={(value) =>
-                        setEditForm((prev) =>
-                          prev ? { ...prev, client_id: value } : prev,
-                        )
-                      }
-                      placeholder="Выберите клиента"
-                      searchPlaceholder="Найти клиента"
-                      emptyText="Клиент не найден"
-                      buttonClassName="h-9 rounded-md"
-                    />
-                  ) : (
-                    <span className="block truncate font-medium">
-                      {clientMap.get(session.client_id) ?? `#${session.client_id}`}
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  {canFullyEdit ? (
-                    <div className="grid min-w-0 grid-cols-1 gap-2">
-                      <Input
-                        type="date"
-                        value={editForm.start_date}
-                        onChange={(event) =>
-                          setEditForm((prev) =>
-                            prev ? { ...prev, start_date: event.target.value } : prev,
-                          )
-                        }
-                        className="h-9 min-w-0 pr-9"
-                      />
-                      <Input
-                        type="time"
-                        value={editForm.start_time}
-                        onChange={(event) =>
-                          setEditForm((prev) =>
-                            prev ? { ...prev, start_time: event.target.value } : prev,
-                          )
-                        }
-                        className="h-9 min-w-0 pr-8"
-                      />
-                    </div>
-                  ) : (
-                    <span className="block truncate text-muted-foreground">
-                      {formatSessionDateTime(session.start_time)}
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  {canFullyEdit ? (
-                    <Input
-                      type="number"
-                      min={1}
-                      step={1}
-                      value={editForm.price}
-                      onChange={(event) =>
-                        setEditForm((prev) => (prev ? { ...prev, price: event.target.value } : prev))
-                      }
-                      className="h-9"
-                    />
-                  ) : (
-                    <span className="block whitespace-nowrap">{formatMoneyCompact(session.price)}</span>
-                  )}
-                </div>
-                <div className="min-w-0 space-y-1">
-                  <span className="block min-w-0 truncate whitespace-nowrap">
-                    {statusLabel(session.status)}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">
-                    Длительность: {editForm.duration_minutes} мин
-                  </span>
-                </div>
-                <div className="flex min-w-0 flex-col gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => void saveInlineEdit(session)}
-                    disabled={savingEdit}
-                    className="h-9 w-full"
-                  >
-                    <Save className="h-3.5 w-3.5 mr-1" />
-                    Сохранить
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={cancelInlineEdit}
-                    disabled={savingEdit}
-                    className="h-9 w-full"
-                  >
-                    <X className="h-3.5 w-3.5 mr-1" />
-                    Отмена
-                  </Button>
-                </div>
-              </div>
-            );
-          }
-
           return (
             <div key={session.id} className={`grid ${tableGridClass} items-center gap-3 p-4 border-b last:border-b-0 text-sm`}>
               {(() => {
@@ -621,7 +524,7 @@ export default function SessionsPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem
-                      onClick={() => startInlineEdit(session)}
+                      onClick={() => startSessionEdit(session)}
                       disabled={session.status !== "scheduled"}
                     >
                       <Edit2 className="h-3.5 w-3.5 mr-2" />
@@ -674,6 +577,103 @@ export default function SessionsPage() {
           </p>
         )}
       </div>
+
+      <Dialog
+        open={editingSession !== null}
+        onOpenChange={(open) => {
+          if (!open) closeSessionEdit();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать сессию</DialogTitle>
+            <DialogDescription>
+              Обновите дату, время, длительность, стоимость и клиента.
+            </DialogDescription>
+          </DialogHeader>
+          {editForm && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-sm text-muted-foreground">Клиент</label>
+                <ClientCombobox
+                  clients={activeClients}
+                  value={editForm.client_id}
+                  onChange={(value) =>
+                    setEditForm((prev) =>
+                      prev ? { ...prev, client_id: value } : prev,
+                    )
+                  }
+                  placeholder="Выберите клиента"
+                  searchPlaceholder="Найти клиента"
+                  emptyText="Клиент не найден"
+                  buttonClassName="h-10 rounded-md"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">Дата</label>
+                <Input
+                  type="date"
+                  value={editForm.start_date}
+                  onChange={(event) =>
+                    setEditForm((prev) =>
+                      prev ? { ...prev, start_date: event.target.value } : prev,
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">Время</label>
+                <Input
+                  type="time"
+                  value={editForm.start_time}
+                  onChange={(event) =>
+                    setEditForm((prev) =>
+                      prev ? { ...prev, start_time: event.target.value } : prev,
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">Длительность (мин)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={editForm.duration_minutes}
+                  onChange={(event) =>
+                    setEditForm((prev) =>
+                      prev ? { ...prev, duration_minutes: event.target.value } : prev,
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">Стоимость (₽)</label>
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={editForm.price}
+                  onChange={(event) =>
+                    setEditForm((prev) =>
+                      prev ? { ...prev, price: event.target.value } : prev,
+                    )
+                  }
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeSessionEdit} disabled={savingEdit}>
+              <X className="h-4 w-4 mr-1" />
+              Отмена
+            </Button>
+            <Button onClick={() => void saveSessionEdit()} disabled={savingEdit || !editForm}>
+              <Save className="h-4 w-4 mr-1" />
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
