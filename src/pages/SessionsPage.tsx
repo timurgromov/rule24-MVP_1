@@ -89,6 +89,10 @@ function statusLabel(status: SessionStatus) {
   return "Запланирована";
 }
 
+function protectionStatusLabel(hasSavedPaymentMethod: boolean): string {
+  return hasSavedPaymentMethod ? "Защищена" : "Не защищена";
+}
+
 function outcomeLabel(outcomeType: SessionDto["outcome_type"]) {
   if (outcomeType === "completed") return "Сессия состоялась";
   if (outcomeType === "late_cancellation") return "Поздняя отмена";
@@ -105,10 +109,10 @@ function transactionStatusText(status: TransactionDto["status"] | null): string 
 }
 
 function formatCardStatus(client: ClientDto | undefined): string {
-  if (!client?.has_saved_payment_method) return "Карта клиента: не привязана";
+  if (!client?.has_saved_payment_method) return "Карта: не привязана";
   const brand = (client.card_brand ?? "Карта").toUpperCase();
   const last4 = client.card_last4 ? ` ****${client.card_last4}` : "";
-  return `Карта клиента: привязана (${brand}${last4})`;
+  return `Карта: привязана (${brand}${last4})`;
 }
 
 function notifyAttentionUpdated() {
@@ -467,8 +471,8 @@ export default function SessionsPage() {
         </div>
       </form>
       <p className="text-xs text-muted-foreground">
-        Ссылка для клиента создается автоматически вместе с сессией. В таблице используйте кнопку
-        «Скопировать ссылку».
+        Ссылка для клиента создается автоматически вместе с сессией. Для незащищенных клиентов
+        используйте кнопку «Скопировать ссылку».
       </p>
 
       <div className="mt-6 rounded-xl border bg-card overflow-hidden">
@@ -486,14 +490,20 @@ export default function SessionsPage() {
                 const transaction = latestTransactionBySessionId.get(session.id) ?? null;
                 const transactionText = transactionStatusText(transaction?.status ?? null);
                 const client = clientById.get(session.client_id);
+                const isProtected = Boolean(client?.has_saved_payment_method);
                 return (
                   <>
-              <span className="block min-w-0 truncate font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
+              <div className="min-w-0">
+                <span className="block truncate font-medium">{clientMap.get(session.client_id) ?? `#${session.client_id}`}</span>
+                <span className="mt-1 block truncate text-xs text-muted-foreground">{formatCardStatus(client)}</span>
+              </div>
               <span className="block min-w-0 truncate text-muted-foreground">{formatSessionDateTime(session.start_time)}</span>
               <span className="block min-w-0 whitespace-nowrap">{formatMoneyCompact(session.price)}</span>
               <div className="min-w-0">
                 <span className="block truncate whitespace-nowrap">{statusLabel(session.status)}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">{formatCardStatus(client)}</span>
+                <span className={`mt-1 block text-xs ${isProtected ? "text-safe-foreground" : "text-amber-700"}`}>
+                  {protectionStatusLabel(isProtected)}
+                </span>
                 {session.status === "cancelled" && transactionText && (
                   <span className="mt-1 block text-xs text-muted-foreground">{transactionText}</span>
                 )}
@@ -507,14 +517,25 @@ export default function SessionsPage() {
                 )}
               </div>
               <div className="flex min-w-[200px] flex-col gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => void copyClientLink(session.id)}
-                  disabled={linkActionSessionId === session.id}
-                  className="h-9 w-full justify-center whitespace-nowrap"
-                >
-                  Скопировать ссылку
-                </Button>
+                {!isProtected ? (
+                  <Button
+                    size="sm"
+                    onClick={() => void copyClientLink(session.id)}
+                    disabled={linkActionSessionId === session.id}
+                    className="h-9 w-full justify-center whitespace-nowrap"
+                  >
+                    Скопировать ссылку
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="h-9 w-full justify-center whitespace-nowrap"
+                  >
+                    Клиент защищен
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"

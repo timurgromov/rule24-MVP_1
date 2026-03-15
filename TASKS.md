@@ -153,6 +153,8 @@ Phase 8 architecture requirements:
 - [x] Show card-binding status directly in Clients list instead of low-signal notes column
 - [x] Move session editing from inline row mode to modal dialog for cleaner table layout
 - [x] Add explicit mobile edit button on Sessions rows to avoid dropdown-first action on narrow screens
+- [x] Split Sessions UI into calendar status and payment-protection status (Защищена / Не защищена)
+- [x] Show link-copy action only for non-protected clients; keep protected clients marked as ready
 
 ---
 
