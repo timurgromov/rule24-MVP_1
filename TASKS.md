@@ -157,6 +157,7 @@ Phase 8 architecture requirements:
 - [x] Show link-copy action only for non-protected clients; keep protected clients marked as ready
 - [x] Restore explicit client consent step on Payment page before card-attachment redirect
 - [x] Restore demo-like Payment page visual tone while keeping required client consent checkboxes
+- [x] Align Payment page to final UX spec: 1 CTA, short copy, clear states (ready/completed/invalid)
 
 ---
 
