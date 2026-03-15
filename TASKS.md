@@ -127,7 +127,7 @@ Phase 8 architecture requirements:
 - [x] Create endpoint to generate client link
 - [x] Create public client payment page
 - [x] Connect card attachment flow through public link
-- [ ] Persist link open/completion state
+- [x] Persist link open/completion state
 
 ---
 

@@ -39,6 +39,24 @@ def _get_link_or_410(db: Session, public_token: str) -> ClientPaymentLink:
     return link
 
 
+def _mark_opened_if_needed(db: Session, link: ClientPaymentLink) -> ClientPaymentLink:
+    if link.opened_at is None and link.status == ClientPaymentLinkStatus.created:
+        link.opened_at = datetime.now(timezone.utc)
+        link.status = ClientPaymentLinkStatus.opened
+        db.commit()
+        db.refresh(link)
+    return link
+
+
+def _mark_completed_if_needed(db: Session, link: ClientPaymentLink) -> ClientPaymentLink:
+    if link.completed_at is None and link.status != ClientPaymentLinkStatus.expired:
+        link.completed_at = datetime.now(timezone.utc)
+        link.status = ClientPaymentLinkStatus.completed
+        db.commit()
+        db.refresh(link)
+    return link
+
+
 @router.get(
     "/{public_token}",
     response_model=ClientPaymentLinkPublicOut,
@@ -49,6 +67,7 @@ def get_public_client_link(
     db: Session = Depends(get_db),
 ) -> ClientPaymentLinkPublicOut:
     link = _get_link_or_410(db, public_token)
+    link = _mark_opened_if_needed(db, link)
 
     session = db.get(AppointmentSession, link.session_id)
     client = db.get(Client, link.client_id)
@@ -101,6 +120,9 @@ def init_attach_card_by_public_link(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)) from exc
+
+    link = _mark_opened_if_needed(db, link)
+    link = _mark_completed_if_needed(db, link)
 
     confirmation = payment.get("confirmation") or {}
     return CardAttachmentInitOut(
